@@ -1,4 +1,4 @@
-package com.example.cameraxintegration
+package com.example.cameraxintegration.callbacks
 
 import android.net.Uri
 

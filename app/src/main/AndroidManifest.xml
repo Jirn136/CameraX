@@ -29,7 +29,7 @@
             android:value="true" />
 
         <activity
-            android:name=".CameraActivity"
+            android:name=".activities.CameraActivity"
             android:clearTaskOnLaunch="true"
             android:configChanges="orientation|screenLayout|screenSize|smallestScreenSize"
             android:exported="true"

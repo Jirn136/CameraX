@@ -1,4 +1,4 @@
-package com.example.cameraxintegration
+package com.example.cameraxintegration.fragment
 
 import android.annotation.SuppressLint
 import android.content.ContentValues
@@ -24,8 +24,11 @@ import androidx.core.util.Consumer
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
 import androidx.window.WindowManager
+import com.example.cameraxintegration.R
+import com.example.cameraxintegration.callbacks.ImageVideoResultCallback
 import com.example.cameraxintegration.databinding.CameraUiContainerBinding
 import com.example.cameraxintegration.databinding.FragmentCameraCaptureBinding
+import com.example.cameraxintegration.utils.*
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.*
@@ -388,7 +391,7 @@ class CameraCaptureFragment : Fragment() {
 
     private fun bindCameraUseCases(
         isVideo: Boolean = false,
-        isFirstTime: Boolean = true
+        isFirstTime: Boolean = true,
     ) {
         // Get screen metrics used to setup camera for full screen resolution
         val metrics = windowManager.getCurrentWindowMetrics().bounds
@@ -505,7 +508,7 @@ class CameraCaptureFragment : Fragment() {
         private var recordingDuration: Int = 0
 
         fun newInstance(duration: Int): CameraCaptureFragment {
-            this.recordingDuration = duration
+            recordingDuration = duration
             return CameraCaptureFragment()
         }
     }

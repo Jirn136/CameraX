@@ -1,4 +1,4 @@
-package com.example.cameraxintegration
+package com.example.cameraxintegration.utils
 
 import android.Manifest
 import android.app.Activity
@@ -11,7 +11,7 @@ import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 
 object Permissions {
-    fun isPermissionAllowed(context: Context?, permission: String?): Boolean =
+    private fun isPermissionAllowed(context: Context?, permission: String?): Boolean =
         ContextCompat.checkSelfPermission(
             context!!, permission!!
         ) == PackageManager.PERMISSION_GRANTED
@@ -24,8 +24,7 @@ object Permissions {
             isPermissionAllowed(activity, Manifest.permission.READ_EXTERNAL_STORAGE)
         val hasWritePermission =
             isPermissionAllowed(activity, Manifest.permission.WRITE_EXTERNAL_STORAGE)
-        val minSdk30 = Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q
-        val writePermissionGranted = hasWritePermission || minSdk30
+        val writePermissionGranted = hasWritePermission || isMinSdk30()
 
         val cameraPermission = isPermissionAllowed(activity,Manifest.permission.CAMERA)
         val audioPermission = isPermissionAllowed(activity,Manifest.permission.RECORD_AUDIO)
@@ -67,10 +66,9 @@ object Permissions {
         permissionsLauncher.launch(permissionsToRequest.toTypedArray())
     }
 
-    fun checkWritePermission(context: Context, permission: String): Boolean {
-        val minSdk30 = Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q
-        return isPermissionAllowed(context, permission) || minSdk30
-    }
+    fun checkWritePermission(context: Context, permission: String): Boolean =
+        isPermissionAllowed(context, permission) || isMinSdk30()
+
 
     fun isMinSdk30() = Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q
 }

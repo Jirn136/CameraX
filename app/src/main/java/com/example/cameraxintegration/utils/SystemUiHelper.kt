@@ -1,4 +1,4 @@
-package com.example.cameraxintegration
+package com.example.cameraxintegration.utils
 
 import android.app.Activity
 import android.os.Build
@@ -19,10 +19,8 @@ var WIDTH = 0
 
 fun Activity.setupScreen() {
     WindowCompat.setDecorFitsSystemWindows(window, false)
-    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-        window.attributes.layoutInDisplayCutoutMode =
-            WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES
-    }
+    window.attributes.layoutInDisplayCutoutMode =
+        WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES
     getScreenSize()
 }
 

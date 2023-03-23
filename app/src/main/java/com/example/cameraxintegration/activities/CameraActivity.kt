@@ -1,4 +1,4 @@
-package com.example.cameraxintegration
+package com.example.cameraxintegration.activities
 
 import android.Manifest
 import android.content.pm.PackageManager
@@ -11,7 +11,12 @@ import androidx.core.content.ContextCompat
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
+import com.example.cameraxintegration.R
 import com.example.cameraxintegration.databinding.ActivityMainBinding
+import com.example.cameraxintegration.fragment.CameraCaptureFragment
+import com.example.cameraxintegration.utils.MAX_REC_DURATION
+import com.example.cameraxintegration.utils.hideStatusBar
+import com.example.cameraxintegration.utils.setupScreen
 
 class CameraActivity : AppCompatActivity() {
     private var _binding: ActivityMainBinding? = null
@@ -90,7 +95,8 @@ class CameraActivity : AppCompatActivity() {
         binding?.fragmentContainer?.let {
             WindowInsetsControllerCompat(window, it).let { controller ->
                 controller.hide(WindowInsetsCompat.Type.systemBars())
-                controller.systemBarsBehavior = WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+                controller.systemBarsBehavior =
+                    WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
             }
         }
     }

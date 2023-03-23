@@ -1,4 +1,4 @@
-package com.example.cameraxintegration
+package com.example.cameraxintegration.utils
 
 import android.view.View
 import androidx.camera.core.AspectRatio
