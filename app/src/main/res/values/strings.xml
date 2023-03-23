@@ -1,0 +1,7 @@
+<resources>
+    <string name="app_name">CameraX Demo</string>
+    <string name="swap_camera">Swap Camera</string>
+    <string name="switching">Switching to %s</string>
+    <string name="video">Video and recording</string>
+    <string name="image">Image and capturing</string>
+</resources>
