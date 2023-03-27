@@ -1,12 +1,18 @@
 package com.example.cameraxintegration.utils
 
+import android.app.Activity
 import android.view.View
 import androidx.camera.core.AspectRatio
+import androidx.camera.core.CameraSelector
+import androidx.camera.lifecycle.ProcessCameraProvider
+import androidx.core.view.WindowCompat
+import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.WindowInsetsControllerCompat
 import kotlin.math.abs
 import kotlin.math.max
 import kotlin.math.min
 
-const val TAG = "CameraXBasic"
+const val TAG = "Kanaku"
 const val FILENAME = "yyyy-MM-dd-HH-mm-ss-SSS"
 const val PHOTO_TYPE = "image/jpeg"
 private const val RATIO_4_3_VALUE = 4.0 / 3.0
@@ -47,3 +53,26 @@ fun View.hide() {
 fun View.show() {
     visibility = View.VISIBLE
 }
+
+fun hideSystemUI(activity: Activity, id: View) {
+    WindowCompat.setDecorFitsSystemWindows(activity.window, false)
+    WindowInsetsControllerCompat(activity.window, id).let { controller ->
+        controller.hide(WindowInsetsCompat.Type.systemBars())
+        controller.systemBarsBehavior =
+            WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+    }
+}
+
+fun Boolean.ifElse(functionOne: () -> Unit, functionTwo: () -> Unit) {
+    if (this) functionOne() else functionTwo()
+}
+
+
+/** Returns true if the device has an available back camera. False otherwise */
+fun hasBackCamera(cameraProvider: ProcessCameraProvider): Boolean =
+    cameraProvider.hasCamera(CameraSelector.DEFAULT_BACK_CAMERA)
+
+
+/** Returns true if the device has an available front camera. False otherwise */
+fun hasFrontCamera(cameraProvider: ProcessCameraProvider): Boolean =
+    cameraProvider.hasCamera(CameraSelector.DEFAULT_FRONT_CAMERA)

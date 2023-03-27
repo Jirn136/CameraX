@@ -4,4 +4,6 @@
     <string name="switching">Switching to %s</string>
     <string name="video">Video and recording</string>
     <string name="image">Image and capturing</string>
+    <string name="title_camera">Camera</string>
+    <string name="title_video">Video</string>
 </resources>
