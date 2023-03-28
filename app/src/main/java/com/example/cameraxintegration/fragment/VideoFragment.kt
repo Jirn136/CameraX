@@ -44,7 +44,6 @@ class VideoFragment : Fragment(), CameraActionCallback {
 
     private var displayId: Int = -1
     private var lensFacing: Int = CameraSelector.LENS_FACING_BACK
-    private var imageCapture: ImageCapture? = null
     private var camera: Camera? = null
     private var cameraProvider: ProcessCameraProvider? = null
     private var listener: ImageVideoResultCallback? = null
@@ -200,9 +199,10 @@ class VideoFragment : Fragment(), CameraActionCallback {
     private val displayListener = object : DisplayManager.DisplayListener {
         override fun onDisplayAdded(displayId: Int) = Unit
         override fun onDisplayRemoved(displayId: Int) = Unit
+        @SuppressLint("RestrictedApi")
         override fun onDisplayChanged(displayId: Int) = view?.let { view ->
             if (displayId == this@VideoFragment.displayId) {
-                imageCapture?.targetRotation = view.display.rotation
+                videoCapture.targetRotation = view.display.rotation
             }
         } ?: Unit
     }
