@@ -17,7 +17,7 @@ import androidx.viewbinding.ViewBinding
 import androidx.window.WindowManager
 import com.example.cameraxintegration.callbacks.CameraActionCallback
 import com.example.cameraxintegration.callbacks.ImageVideoResultCallback
-import com.example.cameraxintegration.viewmodel.ChangeViewModel
+import com.example.cameraxintegration.viewmodel.CameraViewModel
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 
@@ -36,7 +36,7 @@ abstract class BaseFragment<VB : ViewBinding> : Fragment(), CameraActionCallback
         requireActivity().getSystemService(Context.DISPLAY_SERVICE) as DisplayManager
     }
     val viewModel by lazy {
-        ViewModelProvider(requireActivity()).get(ChangeViewModel::class.java)
+        ViewModelProvider(requireActivity()).get(CameraViewModel::class.java)
     }
     var preview: Preview? = null
     var flashMode = ImageCapture.FLASH_MODE_AUTO

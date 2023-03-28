@@ -20,7 +20,7 @@ import com.example.cameraxintegration.databinding.ActivityBaseViewPagerBinding
 import com.example.cameraxintegration.fragment.ImageFragment
 import com.example.cameraxintegration.fragment.VideoFragment
 import com.example.cameraxintegration.utils.*
-import com.example.cameraxintegration.viewmodel.ChangeViewModel
+import com.example.cameraxintegration.viewmodel.CameraViewModel
 import com.google.android.material.tabs.TabLayoutMediator
 
 class BaseViewPagerActivity : AppCompatActivity() {
@@ -37,7 +37,7 @@ class BaseViewPagerActivity : AppCompatActivity() {
     }
 
     private val viewModel by lazy {
-        ViewModelProvider(this).get(ChangeViewModel::class.java)
+        ViewModelProvider(this).get(CameraViewModel::class.java)
     }
 
     private var videoDuration = 0

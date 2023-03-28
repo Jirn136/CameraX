@@ -3,7 +3,7 @@ package com.example.cameraxintegration.viewmodel
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 
-class ChangeViewModel : ViewModel() {
+class CameraViewModel : ViewModel() {
     var flashState = MutableLiveData<Int>()
     var progressValue = MutableLiveData<Int>()
     var isVideoRecording = MutableLiveData<Boolean>()
