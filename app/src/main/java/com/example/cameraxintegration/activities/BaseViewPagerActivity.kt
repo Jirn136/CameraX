@@ -4,21 +4,20 @@ import android.Manifest
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
+import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.ViewModelProvider
 import androidx.viewpager2.widget.ViewPager2
+import androidx.viewpager2.widget.ViewPager2.OnPageChangeCallback
 import com.example.cameraxintegration.R
 import com.example.cameraxintegration.adapter.ViewPagerAdapter
 import com.example.cameraxintegration.callbacks.CameraActionCallback
 import com.example.cameraxintegration.databinding.ActivityBaseViewPagerBinding
 import com.example.cameraxintegration.fragment.CameraFragment
 import com.example.cameraxintegration.fragment.VideoFragment
-import com.example.cameraxintegration.utils.hideStatusBar
-import com.example.cameraxintegration.utils.hideSystemUI
-import com.example.cameraxintegration.utils.ifElse
-import com.example.cameraxintegration.utils.setupScreen
+import com.example.cameraxintegration.utils.*
 import com.example.cameraxintegration.viewmodel.ChangeViewModel
 import com.google.android.material.tabs.TabLayoutMediator
 
@@ -32,12 +31,14 @@ class BaseViewPagerActivity : AppCompatActivity() {
         CameraFragment.newInstance()
     }
     private val videoFragment: VideoFragment by lazy {
-        VideoFragment.newInstance()
+        VideoFragment.newInstance(videoDuration)
     }
 
     private val viewModel by lazy {
         ViewModelProvider(this).get(ChangeViewModel::class.java)
     }
+
+    private var videoDuration = 0
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -61,22 +62,45 @@ class BaseViewPagerActivity : AppCompatActivity() {
             REQUEST_CODE_PERMISSIONS
         )
 
+        videoDuration = intent.getIntExtra(MAX_REC_DURATION, 10)
 
         with(binding) {
             cameraUi.apply {
-                viewModel.flashState.observe(this@BaseViewPagerActivity) {
-                    val flashMode = when (it) {
-                        1 -> R.drawable.ic_flash
-                        2 -> R.drawable.ic_flash_off
-                        else -> R.drawable.ic_flash_auto
+                viewModel.apply {
+                    flashState.observe(this@BaseViewPagerActivity) {
+                        val flashMode = when (it) {
+                            1 -> R.drawable.ic_flash
+                            2 -> R.drawable.ic_flash_off
+                            else -> R.drawable.ic_flash_auto
+                        }
+                        imgFlash.setImageResource(flashMode)
                     }
-                    imgFlash.setImageResource(flashMode)
+
+                    progressValue.observe(this@BaseViewPagerActivity) { progress ->
+                        progressLayout.apply {
+                            videoCounterLayout.show()
+                            videoCounter.text = progress.counterText
+                            videoPbr.apply {
+                                this.progress = progress
+                                max = videoDuration
+                                invalidate()
+                            }
+                        }
+                    }
+
+                    isVideoRecording.observe(this@BaseViewPagerActivity) { videoRecState ->
+                        tabLayout.getTabAt(0)?.view?.isClickable = videoRecState
+                        imgFlash.isEnabled = videoRecState
+                        imgSwap.isEnabled = videoRecState
+                    }
                 }
 
-                imgFlash.setOnClickListener {
-                    (surfaceViewPager.currentItem == 0).ifElse(
-                        { (cameraFragment as CameraActionCallback).onFlashChangeCallback() },
-                        { (videoFragment as CameraActionCallback).onFlashChangeCallback() })
+                imgFlash.apply {
+                    setOnClickListener {
+                        (surfaceViewPager.currentItem == 0).ifElse(
+                            { (cameraFragment as CameraActionCallback).onFlashChangeCallback() },
+                            { (videoFragment as CameraActionCallback).onFlashChangeCallback() })
+                    }
                 }
 
                 imgCapture.apply {
@@ -87,10 +111,12 @@ class BaseViewPagerActivity : AppCompatActivity() {
                     }
                 }
 
-                imgSwap.setOnClickListener {
-                    (surfaceViewPager.currentItem == 0).ifElse(
-                        { (cameraFragment as CameraActionCallback).onLensSwapCallback() },
-                        { (videoFragment as CameraActionCallback).onLensSwapCallback() })
+                imgSwap.apply {
+                    setOnClickListener {
+                        (surfaceViewPager.currentItem == 0).ifElse(
+                            { (cameraFragment as CameraActionCallback).onLensSwapCallback() },
+                            { (videoFragment as CameraActionCallback).onLensSwapCallback() })
+                    }
                 }
             }
         }
@@ -104,25 +130,54 @@ class BaseViewPagerActivity : AppCompatActivity() {
             addFragment(videoFragment, getString(R.string.title_video))
         }
         with(binding) {
-            surfaceViewPager.adapter = adapter
-            surfaceViewPager.orientation = ViewPager2.ORIENTATION_HORIZONTAL
-            TabLayoutMediator(tabLayout, surfaceViewPager) { tab, position ->
-                tab.text = adapter.getTabTitle(position)
-            }.attach()
+            tabLayout.setTabTextColors(
+                resources.getColor(R.color.black, null),
+                resources.getColor(R.color.white, null)
+            )
+            surfaceViewPager.apply {
+                isUserInputEnabled = false
+                this.adapter = adapter
+                orientation = ViewPager2.ORIENTATION_HORIZONTAL
+                TabLayoutMediator(tabLayout, this) { tab, position ->
+                    tab.text = adapter.getTabTitle(position)
+                }.attach()
+                registerOnPageChangeCallback(object : OnPageChangeCallback() {
+                    override fun onPageSelected(position: Int) {
+                        super.onPageSelected(position)
+                        if (position == 0) binding.cameraUi.progressLayout.videoCounterLayout.hide()
+                    }
+
+                })
+            }
         }
     }
 
     private fun allPermissionsGranted(): Boolean {
         for (permission in MANDATORY_PERMISSIONS) {
-            if (ContextCompat.checkSelfPermission(
-                    this,
-                    permission
-                ) != PackageManager.PERMISSION_GRANTED
+            if (ContextCompat.checkSelfPermission(this, permission)
+                != PackageManager.PERMISSION_GRANTED
             ) {
                 return false
             }
         }
         return true
+    }
+
+    override fun onRequestPermissionsResult(
+        requestCode: Int,
+        permissions: Array<String>,
+        grantResults: IntArray,
+    ) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+        if (requestCode == REQUEST_CODE_PERMISSIONS) {
+            if (allPermissionsGranted()) {
+                setupViewPager()
+            } else {
+                Toast.makeText(this, "Permissions not granted by the user.", Toast.LENGTH_SHORT)
+                    .show()
+                this.finish()
+            }
+        }
     }
 
     companion object {

@@ -3,8 +3,6 @@ package com.example.cameraxintegration.fragment
 import android.content.ContentValues
 import android.content.Context
 import android.content.res.Configuration
-import android.graphics.Color
-import android.graphics.drawable.ColorDrawable
 import android.hardware.display.DisplayManager
 import android.os.Build
 import android.os.Bundle
@@ -56,6 +54,9 @@ class CameraFragment : Fragment(), CameraActionCallback {
         ViewModelProvider(requireActivity()).get(ChangeViewModel::class.java)
     }
 
+    private var preview: Preview? = null
+    private var stopped = false
+
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
@@ -71,6 +72,7 @@ class CameraFragment : Fragment(), CameraActionCallback {
         cameraExecutor = Executors.newSingleThreadExecutor()
         displayManager.registerDisplayListener(displayListener, null)
         windowManager = WindowManager(view.context)
+        viewModel.onFlashState(flashMode)
 
         binding?.apply {
             cameraPreviewView.post {
@@ -106,7 +108,7 @@ class CameraFragment : Fragment(), CameraActionCallback {
     }
 
     private fun bindCameraUseCase() {
-        binding?.apply{
+        binding?.apply {
             val metrics = windowManager.getCurrentWindowMetrics().bounds
             Log.d(TAG, "Screen metrics: ${metrics.width()} x ${metrics.height()}")
 
@@ -116,30 +118,27 @@ class CameraFragment : Fragment(), CameraActionCallback {
             val rotation = cameraPreviewView.display.rotation
 
             // CameraProvider
-            val cameraProvider = cameraProvider
-                ?: throw IllegalStateException("Camera initialization failed.")
+            val cameraProvider =
+                cameraProvider ?: throw IllegalStateException("Camera initialization failed.")
 
             val cameraSelector = CameraSelector.Builder().requireLensFacing(lensFacing).build()
 
             // Preview
-            val preview = Preview.Builder()
+            preview = Preview.Builder()
                 // We request aspect ratio but no resolution
                 .setTargetAspectRatio(screenAspectRatio)
                 // Set initial target rotation
-                .setTargetRotation(rotation)
-                .build()
+                .setTargetRotation(rotation).build()
 
             // ImageCapture
-            imageCapture = ImageCapture.Builder()
-                .setCaptureMode(ImageCapture.CAPTURE_MODE_MINIMIZE_LATENCY)
-                // We request aspect ratio but no resolution to match preview config, but letting
-                // CameraX optimize for whatever specific resolution best fits our use cases
-                .setTargetAspectRatio(screenAspectRatio)
-                .setFlashMode(flashMode)
-                // Set initial target rotation, we will have to call this again if rotation changes
-                // during the lifecycle of this use case
-                .setTargetRotation(rotation)
-                .build()
+            imageCapture =
+                ImageCapture.Builder().setCaptureMode(ImageCapture.CAPTURE_MODE_MINIMIZE_LATENCY)
+                    // We request aspect ratio but no resolution to match preview config, but letting
+                    // CameraX optimize for whatever specific resolution best fits our use cases
+                    .setTargetAspectRatio(screenAspectRatio).setFlashMode(flashMode)
+                    // Set initial target rotation, we will have to call this again if rotation changes
+                    // during the lifecycle of this use case
+                    .setTargetRotation(rotation).build()
 
             // Must unbind the use-cases before rebinding them
             cameraProvider.unbindAll()
@@ -151,7 +150,7 @@ class CameraFragment : Fragment(), CameraActionCallback {
                     this@CameraFragment, cameraSelector, preview, imageCapture
                 )
                 // Attach the viewfinder's surface provider to preview use case
-                preview.setSurfaceProvider(cameraPreviewView.surfaceProvider)
+                preview?.setSurfaceProvider(cameraPreviewView.surfaceProvider)
 
             } catch (exc: Exception) {
                 Log.e(TAG, "Use case binding failed", exc)
@@ -167,6 +166,21 @@ class CameraFragment : Fragment(), CameraActionCallback {
         displayManager.unregisterDisplayListener(displayListener)
     }
 
+    override fun onPause() {
+        cameraProvider?.unbindAll()
+        stopped = true
+        super.onPause()
+    }
+
+    override fun onResume() {
+        if (stopped) {
+            binding?.cameraPreviewView?.invalidate()
+            bindCameraUseCase()
+            stopped = false
+        }
+        super.onResume()
+    }
+
     /*    *
    * We need a display listener for orientation changes that do not trigger a configuration
    * change, for example if we choose to override config change in manifest or for 180-degree
@@ -177,12 +191,10 @@ class CameraFragment : Fragment(), CameraActionCallback {
         override fun onDisplayRemoved(displayId: Int) = Unit
         override fun onDisplayChanged(displayId: Int) = view?.let { view ->
             if (displayId == this@CameraFragment.displayId) {
-                Log.d(TAG, "Rotation changed: ${view.display.rotation}")
                 imageCapture?.targetRotation = view.display.rotation
             }
         } ?: Unit
     }
-
 
     companion object {
         fun newInstance(): CameraFragment {
@@ -191,8 +203,9 @@ class CameraFragment : Fragment(), CameraActionCallback {
     }
 
     override fun onLensSwapCallback() {
-        lensFacing = if (CameraSelector.LENS_FACING_FRONT == lensFacing)
-            CameraSelector.LENS_FACING_BACK else CameraSelector.LENS_FACING_FRONT
+        lensFacing =
+            if (CameraSelector.LENS_FACING_FRONT == lensFacing) CameraSelector.LENS_FACING_BACK else CameraSelector.LENS_FACING_FRONT
+        bindCameraUseCase()
     }
 
     override fun onFlashChangeCallback() {
@@ -203,18 +216,16 @@ class CameraFragment : Fragment(), CameraActionCallback {
             2 -> ImageCapture.FLASH_MODE_OFF
             else -> ImageCapture.FLASH_MODE_AUTO
         }
-        viewModel.flashState.value = flashMode
+        viewModel.onFlashState(flashMode)
 
         imageCapture?.flashMode = flashMode
     }
 
     override fun onCaptureCallback() = takePicture()
 
-
     private fun takePicture() {
 // Create time stamped name and MediaStore entry.
-        val name = SimpleDateFormat(FILENAME, Locale.US)
-            .format(System.currentTimeMillis())
+        val name = SimpleDateFormat(FILENAME, Locale.US).format(System.currentTimeMillis())
         val contentValues = ContentValues().apply {
             put(MediaStore.MediaColumns.DISPLAY_NAME, name)
             put(MediaStore.MediaColumns.MIME_TYPE, PHOTO_TYPE)
@@ -225,19 +236,18 @@ class CameraFragment : Fragment(), CameraActionCallback {
         }
 
         // Create output options object which contains file + metadata
-        val outputOptions = ImageCapture.OutputFileOptions
-            .Builder(
-                requireContext().contentResolver,
-                MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
-                contentValues
-            )
-            .build()
+        val outputOptions = ImageCapture.OutputFileOptions.Builder(
+            requireContext().contentResolver,
+            MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
+            contentValues
+        ).build()
 
         // Get a stable reference of the modifiable image capture use case
         imageCapture?.let { imageCapture ->
             // Setup image capture listener which is triggered after photo has been taken
-            imageCapture.takePicture(
-                outputOptions, cameraExecutor, object : ImageCapture.OnImageSavedCallback {
+            imageCapture.takePicture(outputOptions,
+                cameraExecutor,
+                object : ImageCapture.OnImageSavedCallback {
                     override fun onError(exc: ImageCaptureException) {
                         Log.e(TAG, "Photo capture failed: ${exc.message}", exc)
                     }

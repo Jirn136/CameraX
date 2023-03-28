@@ -29,7 +29,7 @@
             android:background="@android:color/transparent"
             app:tabGravity="center"
             app:tabIndicator="@android:color/transparent"
-            app:tabMode="auto"/>
+            app:tabMode="auto" />
 
         <include
             android:id="@+id/camera_ui"
