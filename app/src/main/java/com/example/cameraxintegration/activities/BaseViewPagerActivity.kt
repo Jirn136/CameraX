@@ -2,8 +2,10 @@ package com.example.cameraxintegration.activities
 
 import android.Manifest
 import android.content.pm.PackageManager
+import android.content.res.Configuration
 import android.os.Build
 import android.os.Bundle
+import android.util.Log
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
@@ -15,7 +17,7 @@ import com.example.cameraxintegration.R
 import com.example.cameraxintegration.adapter.ViewPagerAdapter
 import com.example.cameraxintegration.callbacks.CameraActionCallback
 import com.example.cameraxintegration.databinding.ActivityBaseViewPagerBinding
-import com.example.cameraxintegration.fragment.CameraFragment
+import com.example.cameraxintegration.fragment.ImageFragment
 import com.example.cameraxintegration.fragment.VideoFragment
 import com.example.cameraxintegration.utils.*
 import com.example.cameraxintegration.viewmodel.ChangeViewModel
@@ -27,8 +29,8 @@ class BaseViewPagerActivity : AppCompatActivity() {
 
     private var permissions = mutableListOf<String>()
 
-    private val cameraFragment: CameraFragment by lazy {
-        CameraFragment.newInstance()
+    private val imageFragment: ImageFragment by lazy {
+        ImageFragment.newInstance()
     }
     private val videoFragment: VideoFragment by lazy {
         VideoFragment.newInstance(videoDuration)
@@ -62,7 +64,7 @@ class BaseViewPagerActivity : AppCompatActivity() {
             REQUEST_CODE_PERMISSIONS
         )
 
-        videoDuration = intent.getIntExtra(MAX_REC_DURATION, 10)
+        videoDuration = intent.getIntExtra(MAX_REC_DURATION, 5)
 
         with(binding) {
             cameraUi.apply {
@@ -76,9 +78,12 @@ class BaseViewPagerActivity : AppCompatActivity() {
                         imgFlash.setImageResource(flashMode)
                     }
 
+                    // Progress value has been updated to max when user stops/fullFilled the video recording time
                     progressValue.observe(this@BaseViewPagerActivity) { progress ->
                         progressLayout.apply {
-                            videoCounterLayout.show()
+                            videoCounterLayout.apply {
+                                if (progress >= videoDuration) gone() else show()
+                            }
                             videoCounter.text = progress.counterText
                             videoPbr.apply {
                                 this.progress = progress
@@ -89,7 +94,9 @@ class BaseViewPagerActivity : AppCompatActivity() {
                     }
 
                     isVideoRecording.observe(this@BaseViewPagerActivity) { videoRecState ->
-                        tabLayout.getTabAt(0)?.view?.isClickable = videoRecState
+                        tabLayout.apply {
+                            if (videoRecState) show() else gone()
+                        }
                         imgFlash.isEnabled = videoRecState
                         imgSwap.isEnabled = videoRecState
                     }
@@ -98,7 +105,7 @@ class BaseViewPagerActivity : AppCompatActivity() {
                 imgFlash.apply {
                     setOnClickListener {
                         (surfaceViewPager.currentItem == 0).ifElse(
-                            { (cameraFragment as CameraActionCallback).onFlashChangeCallback() },
+                            { (imageFragment as CameraActionCallback).onFlashChangeCallback() },
                             { (videoFragment as CameraActionCallback).onFlashChangeCallback() })
                     }
                 }
@@ -106,7 +113,7 @@ class BaseViewPagerActivity : AppCompatActivity() {
                 imgCapture.apply {
                     setOnClickListener {
                         (surfaceViewPager.currentItem == 0).ifElse(
-                            { (cameraFragment as CameraActionCallback).onCaptureCallback() },
+                            { (imageFragment as CameraActionCallback).onCaptureCallback() },
                             { (videoFragment as CameraActionCallback).onCaptureCallback() })
                     }
                 }
@@ -114,7 +121,7 @@ class BaseViewPagerActivity : AppCompatActivity() {
                 imgSwap.apply {
                     setOnClickListener {
                         (surfaceViewPager.currentItem == 0).ifElse(
-                            { (cameraFragment as CameraActionCallback).onLensSwapCallback() },
+                            { (imageFragment as CameraActionCallback).onLensSwapCallback() },
                             { (videoFragment as CameraActionCallback).onLensSwapCallback() })
                     }
                 }
@@ -123,10 +130,19 @@ class BaseViewPagerActivity : AppCompatActivity() {
     }
 
 
+    override fun onConfigurationChanged(newConfig: Configuration) {
+        super.onConfigurationChanged(newConfig)
+        if(newConfig.orientation == Configuration.ORIENTATION_PORTRAIT)
+            Log.i("TAG", "onConfigurationChanged: portrait")
+        else
+            Log.i("TAG", "onConfigurationChanged: landscape")
+    }
+
+
     private fun setupViewPager() {
         val adapter = ViewPagerAdapter(this)
         adapter.apply {
-            addFragment(cameraFragment, getString(R.string.title_camera))
+            addFragment(imageFragment, getString(R.string.title_camera))
             addFragment(videoFragment, getString(R.string.title_video))
         }
         with(binding) {
@@ -144,7 +160,11 @@ class BaseViewPagerActivity : AppCompatActivity() {
                 registerOnPageChangeCallback(object : OnPageChangeCallback() {
                     override fun onPageSelected(position: Int) {
                         super.onPageSelected(position)
-                        if (position == 0) binding.cameraUi.progressLayout.videoCounterLayout.hide()
+                        if (position == 0) {
+                            cameraUi.apply {
+                                progressLayout.videoCounterLayout.gone()
+                            }
+                        }
                     }
 
                 })
@@ -161,6 +181,13 @@ class BaseViewPagerActivity : AppCompatActivity() {
             }
         }
         return true
+    }
+
+    override fun onResume() {
+        super.onResume()
+        binding.container.postDelayed({
+            hideSystemUI(this,binding.container)
+        },IMMERSIVE_FLAG_TIMEOUT)
     }
 
     override fun onRequestPermissionsResult(
@@ -186,5 +213,6 @@ class BaseViewPagerActivity : AppCompatActivity() {
             Manifest.permission.CAMERA,
             Manifest.permission.RECORD_AUDIO
         )
+        private const val IMMERSIVE_FLAG_TIMEOUT = 500L
     }
 }

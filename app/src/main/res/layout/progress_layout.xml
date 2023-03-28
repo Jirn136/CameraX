@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/video_counter_layout"
     android:layout_width="wrap_content"
     android:layout_height="wrap_content"
@@ -7,7 +8,7 @@
     android:layout_marginTop="42dp"
     android:elevation="100dp"
     android:orientation="horizontal"
-    android:visibility="gone">
+    android:visibility="visible">
 
     <FrameLayout
         android:layout_width="wrap_content"
@@ -19,6 +20,7 @@
             android:layout_height="14.5dp"
             android:layout_gravity="center"
             android:padding="1dp"
+            android:contentDescription="@string/image"
             android:src="@drawable/red_circle" />
 
         <ProgressBar
@@ -39,8 +41,9 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_gravity="center_vertical"
-        android:paddingLeft="9dp"
-        android:text="0:00"
+        android:paddingStart="9dp"
+        android:paddingEnd="9dp"
+        tools:text="0:00"
         android:textColor="@android:color/white"
         android:textSize="12sp" />
 

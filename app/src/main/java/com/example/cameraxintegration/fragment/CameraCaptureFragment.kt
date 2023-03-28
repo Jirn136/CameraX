@@ -236,7 +236,7 @@ class CameraCaptureFragment : Fragment() {
                             listener?.onImageVideoResult(savedUri)
                         }
                         requireActivity().runOnUiThread {
-                            cameraBinding?.progressLayout?.videoCounterLayout?.hide()
+                            cameraBinding?.progressLayout?.videoCounterLayout?.gone()
                         }
 //                        requireActivity().finish()
                     }
@@ -263,7 +263,7 @@ class CameraCaptureFragment : Fragment() {
             it.stop()
             currentRecording = null
         }
-        cameraBinding?.progressLayout?.videoCounterLayout?.hide()
+        cameraBinding?.progressLayout?.videoCounterLayout?.gone()
 
     }
 

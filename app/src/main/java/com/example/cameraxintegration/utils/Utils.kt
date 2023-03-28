@@ -1,6 +1,8 @@
 package com.example.cameraxintegration.utils
 
 import android.app.Activity
+import android.os.Handler
+import android.os.Looper
 import android.view.View
 import androidx.camera.core.AspectRatio
 import androidx.camera.core.CameraSelector
@@ -46,7 +48,7 @@ val Int.counterText: String
         return "$min:$sec"
     }
 
-fun View.hide() {
+fun View.gone() {
     visibility = View.GONE
 }
 
@@ -76,3 +78,11 @@ fun hasBackCamera(cameraProvider: ProcessCameraProvider): Boolean =
 /** Returns true if the device has an available front camera. False otherwise */
 fun hasFrontCamera(cameraProvider: ProcessCameraProvider): Boolean =
     cameraProvider.hasCamera(CameraSelector.DEFAULT_FRONT_CAMERA)
+
+private object ContextHandler {
+    val handler = Handler(Looper.getMainLooper())
+    val mainThread = Looper.getMainLooper().thread
+}
+fun runOnUiThread(action: () -> Unit) {
+    if (ContextHandler.mainThread == Thread.currentThread()) action() else ContextHandler.handler.post { action() }
+}
