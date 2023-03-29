@@ -1,5 +1,6 @@
 package com.example.cameraxintegration.viewmodel
 
+import android.graphics.Bitmap
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 
@@ -8,6 +9,7 @@ class CameraViewModel : ViewModel() {
     var progressValue = MutableLiveData<Int>()
     var isVideoRecording = MutableLiveData<Boolean>()
     var isLensFacingBack = MutableLiveData<Boolean>()
+    var previewBitmap = MutableLiveData<Bitmap>()
 
     fun onFlashState(state: Int) {
         flashState.value = state
@@ -20,7 +22,12 @@ class CameraViewModel : ViewModel() {
     fun onVideoRecording(videoStopped: Boolean) {
         isVideoRecording.value = videoStopped
     }
-    fun onLensFacingBack(isLensFacing:Boolean){
+
+    fun onLensFacingBack(isLensFacing: Boolean) {
         isLensFacingBack.value = isLensFacing
+    }
+
+    fun onPreviewBitmap(bitmap: Bitmap) {
+        previewBitmap.value = bitmap
     }
 }

@@ -95,7 +95,8 @@ class ImageFragment : BaseFragment<FragmentCameraBinding>() {
             // ImageCapture
             imageCapture =
                 rotation?.let {
-                    ImageCapture.Builder().setCaptureMode(ImageCapture.CAPTURE_MODE_MINIMIZE_LATENCY)
+                    ImageCapture.Builder()
+                        .setCaptureMode(ImageCapture.CAPTURE_MODE_MINIMIZE_LATENCY)
                         // We request aspect ratio but no resolution to match preview config, but letting
                         // CameraX optimize for whatever specific resolution best fits our use cases
                         .setTargetAspectRatio(screenAspectRatio).setFlashMode(flashMode)
@@ -127,6 +128,13 @@ class ImageFragment : BaseFragment<FragmentCameraBinding>() {
         super.onDestroyView()
         cameraExecutor.shutdown()
         displayManager.unregisterDisplayListener(displayListener)
+    }
+
+    override fun onPause() {
+        binding.cameraPreviewView.bitmap?.apply {
+            viewModel.onPreviewBitmap(this)
+        }
+        super.onPause()
     }
 
     override fun onResume() {

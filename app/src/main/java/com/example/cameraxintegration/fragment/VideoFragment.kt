@@ -134,6 +134,9 @@ class VideoFragment : BaseFragment<FragmentVideoBinding>() {
 
 
     override fun onPause() {
+        binding.cameraPreviewView.bitmap?.apply {
+            viewModel.onPreviewBitmap(this)
+        }
         stopRecording()
         super.onPause()
     }

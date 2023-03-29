@@ -14,13 +14,12 @@ import kotlin.math.abs
 import kotlin.math.max
 import kotlin.math.min
 
-const val TAG = "Kanaku"
+
+const val TAG = "CAMERAX_"
 const val FILENAME = "yyyy-MM-dd-HH-mm-ss-SSS"
 const val PHOTO_TYPE = "image/jpeg"
 private const val RATIO_4_3_VALUE = 4.0 / 3.0
 private const val RATIO_16_9_VALUE = 16.0 / 9.0
-const val ANIMATION_FAST_MILLIS = 50L
-const val ANIMATION_SLOW_MILLIS = 100L
 const val MAX_REC_DURATION = "max_rec_duration"
 
 fun aspectRatio(width: Int, height: Int): Int {
@@ -83,6 +82,13 @@ private object ContextHandler {
     val handler = Handler(Looper.getMainLooper())
     val mainThread = Looper.getMainLooper().thread
 }
+
 fun runOnUiThread(action: () -> Unit) {
     if (ContextHandler.mainThread == Thread.currentThread()) action() else ContextHandler.handler.post { action() }
+}
+
+fun defaultPostDelay(action: () -> Unit) {
+    Handler(Looper.getMainLooper()).postDelayed({
+        action()
+    },500)
 }

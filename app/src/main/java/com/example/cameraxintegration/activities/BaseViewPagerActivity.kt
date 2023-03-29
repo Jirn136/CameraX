@@ -99,6 +99,7 @@ class BaseViewPagerActivity : AppCompatActivity() {
             }
         }
     }
+
     private fun handleObservers() = binding.apply {
         cameraUi.apply {
 
@@ -135,14 +136,35 @@ class BaseViewPagerActivity : AppCompatActivity() {
                     imgSwap.isEnabled = videoRecState
                 }
 
-                isLensFacingBack.observe(this@BaseViewPagerActivity){ lensFacingBack ->
+                isLensFacingBack.observe(this@BaseViewPagerActivity) { lensFacingBack ->
                     imgFlash.apply {
-                        if(lensFacingBack) show() else gone()
+                        if (lensFacingBack) {
+                            imgCameraType.apply {
+                                setImageResource(R.drawable.ic_outdoor)
+                                show()
+                                defaultPostDelay { this.gone() }
+                            }
+                            show()
+
+                        } else {
+                            imgCameraType.apply {
+                                setImageResource(R.drawable.ic_person)
+                                show()
+                                defaultPostDelay {  this.gone() }
+                            }
+                            gone()
+                        }
                     }
+                }
+
+                previewBitmap.observe(this@BaseViewPagerActivity) { bitmap ->
+                    Log.i("kanaku", "handleObservers: $bitmap")
+                    transitionPreview.setImageBitmap(bitmap)
                 }
             }
         }
     }
+
     override fun onConfigurationChanged(newConfig: Configuration) {
         super.onConfigurationChanged(newConfig)
         if (newConfig.orientation == Configuration.ORIENTATION_PORTRAIT)
@@ -160,8 +182,8 @@ class BaseViewPagerActivity : AppCompatActivity() {
         }
         with(binding) {
             tabLayout.setTabTextColors(
-                resources.getColor(R.color.black, null),
-                resources.getColor(R.color.white, null)
+                resources.getColor(R.color.white, null),
+                resources.getColor(R.color.yellow, null)
             )
             surfaceViewPager.apply {
                 isUserInputEnabled = false
@@ -186,10 +208,10 @@ class BaseViewPagerActivity : AppCompatActivity() {
                             if (tabPosition == 0) setCameraType(R.drawable.ic_video)
                             else setCameraType(R.drawable.ic_camera)
                         } else if (state == SCROLL_STATE_IDLE)
-                            Handler(Looper.getMainLooper()).postDelayed({
+                            defaultPostDelay {
+                                transitionPreview.gone()
                                 imgCameraType.gone()
-                            }, 200)
-
+                            }
                     }
 
                     override fun onPageScrolled(
@@ -207,6 +229,8 @@ class BaseViewPagerActivity : AppCompatActivity() {
     }
 
     private fun setCameraType(id: Int) = binding.imgCameraType.apply {
+        if (tabPosition == 0) imageFragment.onPause() else videoFragment.onPause()
+        binding.transitionPreview.show()
         show()
         setImageResource(id)
     }

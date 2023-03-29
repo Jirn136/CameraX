@@ -16,6 +16,12 @@
         app:layout_constraintTop_toTopOf="parent" />
 
     <ImageView
+        android:id="@+id/transition_preview"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:contentDescription="@string/preview" />
+
+    <ImageView
         android:id="@+id/img_camera_type"
         android:layout_width="30dp"
         android:layout_height="30dp"
@@ -44,7 +50,20 @@
             android:background="@android:color/transparent"
             app:tabGravity="center"
             app:tabIndicator="@android:color/transparent"
-            app:tabMode="auto" />
+            app:tabMode="auto"
+            app:tabSelectedTextColor="@color/yellow"
+            app:tabTextColor="@color/white">
+
+            <com.google.android.material.tabs.TabItem
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/title_camera" />
+
+            <com.google.android.material.tabs.TabItem
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/title_video" />
+        </com.google.android.material.tabs.TabLayout>
 
         <include
             android:id="@+id/camera_ui"
