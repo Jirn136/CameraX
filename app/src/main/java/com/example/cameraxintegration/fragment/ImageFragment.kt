@@ -168,8 +168,13 @@ class ImageFragment : BaseFragment<FragmentCameraBinding>() {
     }
 
     override fun onLensSwapCallback() {
-        super.onLensSwapCallback()
-        bindCameraUseCase()
+        binding.cameraPreviewView.bitmap?.let {
+            viewModel.onPreviewBitmap(it)
+        }
+        defaultPostDelay {
+            super.onLensSwapCallback()
+            bindCameraUseCase()
+        }
     }
 
 

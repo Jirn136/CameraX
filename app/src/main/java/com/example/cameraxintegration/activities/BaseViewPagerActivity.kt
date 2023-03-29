@@ -5,8 +5,6 @@ import android.content.pm.PackageManager
 import android.content.res.Configuration
 import android.os.Build
 import android.os.Bundle
-import android.os.Handler
-import android.os.Looper
 import android.util.Log
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
@@ -137,6 +135,7 @@ class BaseViewPagerActivity : AppCompatActivity() {
                 }
 
                 isLensFacingBack.observe(this@BaseViewPagerActivity) { lensFacingBack ->
+                    transitionPreview.show()
                     imgFlash.apply {
                         if (lensFacingBack) {
                             imgCameraType.apply {
@@ -150,11 +149,12 @@ class BaseViewPagerActivity : AppCompatActivity() {
                             imgCameraType.apply {
                                 setImageResource(R.drawable.ic_person)
                                 show()
-                                defaultPostDelay {  this.gone() }
+                                defaultPostDelay { this.gone() }
                             }
                             gone()
                         }
                     }
+                    defaultPostDelay { transitionPreview.gone() }
                 }
 
                 previewBitmap.observe(this@BaseViewPagerActivity) { bitmap ->

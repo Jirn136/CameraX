@@ -21,6 +21,7 @@ const val PHOTO_TYPE = "image/jpeg"
 private const val RATIO_4_3_VALUE = 4.0 / 3.0
 private const val RATIO_16_9_VALUE = 16.0 / 9.0
 const val MAX_REC_DURATION = "max_rec_duration"
+private const val POST_DELAY_DURATION = 600L
 
 fun aspectRatio(width: Int, height: Int): Int {
     val previewRatio = max(width, height).toDouble() / min(width, height)
@@ -90,5 +91,5 @@ fun runOnUiThread(action: () -> Unit) {
 fun defaultPostDelay(action: () -> Unit) {
     Handler(Looper.getMainLooper()).postDelayed({
         action()
-    },500)
+    }, POST_DELAY_DURATION)
 }

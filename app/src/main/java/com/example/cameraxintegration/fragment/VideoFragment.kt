@@ -283,8 +283,13 @@ class VideoFragment : BaseFragment<FragmentVideoBinding>() {
     }
 
     override fun onLensSwapCallback() {
-        super.onLensSwapCallback()
-        bindCameraUseCase()
+        binding.cameraPreviewView.bitmap?.let {
+            viewModel.onPreviewBitmap(it)
+        }
+        defaultPostDelay {
+            super.onLensSwapCallback()
+            bindCameraUseCase()
+        }
     }
 
     override fun onCaptureCallback() =
