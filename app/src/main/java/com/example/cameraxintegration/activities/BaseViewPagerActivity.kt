@@ -5,14 +5,15 @@ import android.content.pm.PackageManager
 import android.content.res.Configuration
 import android.os.Build
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import android.util.Log
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.ViewModelProvider
-import androidx.viewpager2.widget.ViewPager2
-import androidx.viewpager2.widget.ViewPager2.OnPageChangeCallback
+import androidx.viewpager2.widget.ViewPager2.*
 import com.example.cameraxintegration.R
 import com.example.cameraxintegration.adapter.ViewPagerAdapter
 import com.example.cameraxintegration.callbacks.CameraActionCallback
@@ -42,6 +43,8 @@ class BaseViewPagerActivity : AppCompatActivity() {
 
     private var videoDuration = 0
 
+    private var tabPosition = 0
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         _binding = ActivityBaseViewPagerBinding.inflate(layoutInflater)
@@ -66,42 +69,10 @@ class BaseViewPagerActivity : AppCompatActivity() {
 
         videoDuration = intent.getIntExtra(MAX_REC_DURATION, 5)
 
+        handleObservers()
+
         with(binding) {
             cameraUi.apply {
-                viewModel.apply {
-                    flashState.observe(this@BaseViewPagerActivity) {
-                        val flashMode = when (it) {
-                            1 -> R.drawable.ic_flash
-                            2 -> R.drawable.ic_flash_off
-                            else -> R.drawable.ic_flash_auto
-                        }
-                        imgFlash.setImageResource(flashMode)
-                    }
-
-                    // Progress value has been updated to max when user stops/fullFilled the video recording time
-                    progressValue.observe(this@BaseViewPagerActivity) { progress ->
-                        progressLayout.apply {
-                            videoCounterLayout.apply {
-                                if (progress >= videoDuration) gone() else show()
-                            }
-                            videoCounter.text = progress.counterText
-                            videoPbr.apply {
-                                this.progress = progress
-                                max = videoDuration
-                                invalidate()
-                            }
-                        }
-                    }
-
-                    isVideoRecording.observe(this@BaseViewPagerActivity) { videoRecState ->
-                        tabLayout.apply {
-                            if (videoRecState) show() else gone()
-                        }
-                        imgFlash.isEnabled = videoRecState
-                        imgSwap.isEnabled = videoRecState
-                    }
-                }
-
                 imgFlash.apply {
                     setOnClickListener {
                         (surfaceViewPager.currentItem == 0).ifElse(
@@ -128,11 +99,53 @@ class BaseViewPagerActivity : AppCompatActivity() {
             }
         }
     }
+    private fun handleObservers() = binding.apply {
+        cameraUi.apply {
 
+            viewModel.apply {
+                flashState.observe(this@BaseViewPagerActivity) {
+                    val flashMode = when (it) {
+                        1 -> R.drawable.ic_flash
+                        2 -> R.drawable.ic_flash_off
+                        else -> R.drawable.ic_flash_auto
+                    }
+                    imgFlash.setImageResource(flashMode)
+                }
 
+                // Progress value has been updated to max when user stops/fullFilled the video recording time
+                progressValue.observe(this@BaseViewPagerActivity) { progress ->
+                    progressLayout.apply {
+                        videoCounterLayout.apply {
+                            if (progress >= videoDuration) gone() else show()
+                        }
+                        videoCounter.text = progress.counterText
+                        videoPbr.apply {
+                            this.progress = progress
+                            max = videoDuration
+                            invalidate()
+                        }
+                    }
+                }
+
+                isVideoRecording.observe(this@BaseViewPagerActivity) { videoRecState ->
+                    tabLayout.apply {
+                        if (videoRecState) show() else gone()
+                    }
+                    imgFlash.isEnabled = videoRecState
+                    imgSwap.isEnabled = videoRecState
+                }
+
+                isLensFacingBack.observe(this@BaseViewPagerActivity){ lensFacingBack ->
+                    imgFlash.apply {
+                        if(lensFacingBack) show() else gone()
+                    }
+                }
+            }
+        }
+    }
     override fun onConfigurationChanged(newConfig: Configuration) {
         super.onConfigurationChanged(newConfig)
-        if(newConfig.orientation == Configuration.ORIENTATION_PORTRAIT)
+        if (newConfig.orientation == Configuration.ORIENTATION_PORTRAIT)
             Log.i("TAG", "onConfigurationChanged: portrait")
         else
             Log.i("TAG", "onConfigurationChanged: landscape")
@@ -153,7 +166,7 @@ class BaseViewPagerActivity : AppCompatActivity() {
             surfaceViewPager.apply {
                 isUserInputEnabled = false
                 this.adapter = adapter
-                orientation = ViewPager2.ORIENTATION_HORIZONTAL
+                orientation = ORIENTATION_HORIZONTAL
                 TabLayoutMediator(tabLayout, this) { tab, position ->
                     tab.text = adapter.getTabTitle(position)
                 }.attach()
@@ -167,9 +180,35 @@ class BaseViewPagerActivity : AppCompatActivity() {
                         }
                     }
 
+                    override fun onPageScrollStateChanged(state: Int) {
+                        super.onPageScrollStateChanged(state)
+                        if (state == SCROLL_STATE_SETTLING) {
+                            if (tabPosition == 0) setCameraType(R.drawable.ic_video)
+                            else setCameraType(R.drawable.ic_camera)
+                        } else if (state == SCROLL_STATE_IDLE)
+                            Handler(Looper.getMainLooper()).postDelayed({
+                                imgCameraType.gone()
+                            }, 200)
+
+                    }
+
+                    override fun onPageScrolled(
+                        position: Int,
+                        positionOffset: Float,
+                        positionOffsetPixels: Int,
+                    ) {
+                        super.onPageScrolled(position, positionOffset, positionOffsetPixels)
+                        tabPosition = position
+                    }
+
                 })
             }
         }
+    }
+
+    private fun setCameraType(id: Int) = binding.imgCameraType.apply {
+        show()
+        setImageResource(id)
     }
 
     private fun allPermissionsGranted(): Boolean {
@@ -186,8 +225,8 @@ class BaseViewPagerActivity : AppCompatActivity() {
     override fun onResume() {
         super.onResume()
         binding.container.postDelayed({
-            hideSystemUI(this,binding.container)
-        },IMMERSIVE_FLAG_TIMEOUT)
+            hideSystemUI(this, binding.container)
+        }, IMMERSIVE_FLAG_TIMEOUT)
     }
 
     override fun onRequestPermissionsResult(

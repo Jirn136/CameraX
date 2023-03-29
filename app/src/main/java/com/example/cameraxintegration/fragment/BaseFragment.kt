@@ -79,6 +79,7 @@ abstract class BaseFragment<VB : ViewBinding> : Fragment(), CameraActionCallback
         lensFacing =
             if (CameraSelector.LENS_FACING_FRONT == lensFacing)
                 CameraSelector.LENS_FACING_BACK else CameraSelector.LENS_FACING_FRONT
+         viewModel.onLensFacingBack(lensFacing != CameraSelector.LENS_FACING_FRONT)
     }
 
     override fun onFlashChangeCallback() {
