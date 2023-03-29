@@ -40,7 +40,7 @@ class VideoFragment : BaseFragment<FragmentVideoBinding>() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        viewModel.lensFacing.observe(this){ lens ->
+        viewModel.lensFacing.observe(viewLifecycleOwner){ lens ->
             Log.i("kanaku", "onResume:44 $lens")
             lensFacing = lens
 
