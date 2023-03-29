@@ -1,8 +1,6 @@
 package com.example.cameraxintegration.fragment
 
 import android.content.ContentValues
-import android.content.res.Configuration
-import android.hardware.display.DisplayManager
 import android.os.Build
 import android.os.Bundle
 import android.provider.MediaStore
@@ -24,6 +22,7 @@ import java.util.*
 
 class ImageFragment : BaseFragment<FragmentCameraBinding>() {
     private var imageCapture: ImageCapture? = null
+    private var stopped = false
 
     override fun getViewBinding(
         inflater: LayoutInflater,
@@ -45,11 +44,6 @@ class ImageFragment : BaseFragment<FragmentCameraBinding>() {
                 }
             }
         }
-    }
-
-    override fun onConfigurationChanged(newConfig: Configuration) {
-        super.onConfigurationChanged(newConfig)
-        bindCameraUseCase()
     }
 
     private fun bindCameraUseCase() {
@@ -112,6 +106,7 @@ class ImageFragment : BaseFragment<FragmentCameraBinding>() {
         binding.cameraPreviewView.bitmap?.apply {
             viewModel.onPreviewBitmap(this)
         }
+        stopped = true
         super.onPause()
     }
 
@@ -119,30 +114,10 @@ class ImageFragment : BaseFragment<FragmentCameraBinding>() {
         Log.i("kanaku", "onResume:camera $lensFacing")
         if (stopped) {
             binding.cameraPreviewView.invalidate()
-            viewModel.lensFacing.observe(this){ lens ->
-                Log.i("kanaku", "onResume:123 $lens")
-                lensFacing = lens
-
-            }
             bindCameraUseCase()
             stopped = false
         }
         super.onResume()
-    }
-
-    /*    *
-   * We need a display listener for orientation changes that do not trigger a configuration
-   * change, for example if we choose to override config change in manifest or for 180-degree
-   * orientation changes.*/
-
-    private val displayListener = object : DisplayManager.DisplayListener {
-        override fun onDisplayAdded(displayId: Int) = Unit
-        override fun onDisplayRemoved(displayId: Int) = Unit
-        override fun onDisplayChanged(displayId: Int) = view?.let { view ->
-            if (displayId == this@ImageFragment.displayId) {
-                imageCapture?.targetRotation = view.display.rotation
-            }
-        } ?: Unit
     }
 
     companion object {
@@ -152,6 +127,7 @@ class ImageFragment : BaseFragment<FragmentCameraBinding>() {
     }
 
     override fun onLensSwapCallback() {
+        Log.i("kanaku", "onLensSwapCallback: 150 image")
         binding.cameraPreviewView.bitmap?.let {
             viewModel.onPreviewBitmap(it)
         }

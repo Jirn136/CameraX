@@ -29,7 +29,6 @@ abstract class BaseFragment<VB : ViewBinding> : Fragment(), CameraActionCallback
     protected val binding get() = _binding!!
 
     var displayId: Int = -1
-    var lensFacing: Int = CameraSelector.LENS_FACING_BACK
     var camera: Camera? = null
     var cameraProvider: ProcessCameraProvider? = null
     var listener: ImageVideoResultCallback? = null
@@ -40,7 +39,6 @@ abstract class BaseFragment<VB : ViewBinding> : Fragment(), CameraActionCallback
     var preview: Preview? = null
     var flashMode = ImageCapture.FLASH_MODE_AUTO
 
-    var stopped = false
 
     /** Blocking camera operations are performed using this executor */
     lateinit var cameraExecutor: ExecutorService
@@ -65,6 +63,7 @@ abstract class BaseFragment<VB : ViewBinding> : Fragment(), CameraActionCallback
         cameraProvider = ProcessCameraProvider.getInstance(requireContext()).await()
 
         cameraProvider?.let {
+            Log.i("kanaku", "setupCamera: 66")
             lensFacing = when {
                 hasBackCamera(it) -> CameraSelector.LENS_FACING_BACK
                 hasFrontCamera(it) -> CameraSelector.LENS_FACING_FRONT
@@ -81,7 +80,6 @@ abstract class BaseFragment<VB : ViewBinding> : Fragment(), CameraActionCallback
 
     override fun onPause() {
         cameraProvider?.unbindAll()
-        stopped = true
         super.onPause()
     }
 
@@ -94,8 +92,7 @@ abstract class BaseFragment<VB : ViewBinding> : Fragment(), CameraActionCallback
         lensFacing =
             if (CameraSelector.LENS_FACING_FRONT == lensFacing)
                 CameraSelector.LENS_FACING_BACK else CameraSelector.LENS_FACING_FRONT
-         viewModel.onLensFacing(lensFacing)
-         viewModel.onLensFacingBack(lensFacing != CameraSelector.LENS_FACING_FRONT)
+        viewModel.onLensFacingBack(lensFacing != CameraSelector.LENS_FACING_FRONT)
     }
 
     override fun onFlashChangeCallback() {
@@ -111,5 +108,9 @@ abstract class BaseFragment<VB : ViewBinding> : Fragment(), CameraActionCallback
 
     override fun onCaptureCallback() {
 //        TODO("Not yet implemented")
+    }
+
+    companion object {
+        var lensFacing = CameraSelector.LENS_FACING_BACK
     }
 }

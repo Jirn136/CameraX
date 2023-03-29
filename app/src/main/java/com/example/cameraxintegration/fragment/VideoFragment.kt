@@ -31,6 +31,7 @@ class VideoFragment : BaseFragment<FragmentVideoBinding>() {
     private var currentRecording: Recording? = null
     private lateinit var recordingState: VideoRecordEvent
     private var startTime = 0L
+    private var stopped = false
 
     override fun getViewBinding(
         inflater: LayoutInflater,
@@ -40,12 +41,6 @@ class VideoFragment : BaseFragment<FragmentVideoBinding>() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        viewModel.lensFacing.observe(viewLifecycleOwner){ lens ->
-            Log.i("kanaku", "onResume:44 $lens")
-            lensFacing = lens
-
-        }
-
         binding.apply {
             // Added Delay for binding the videoCapture useCase
             Handler(Looper.getMainLooper()).postDelayed({
@@ -53,17 +48,15 @@ class VideoFragment : BaseFragment<FragmentVideoBinding>() {
                     displayId = cameraPreviewView.display.displayId
 
                     lifecycleScope.launch {
-                        setupCamera()
-                        bindCameraUseCase()
+                        setupCamera().let {
+                            Log.i("kanaku", "onViewCreated: 52")
+                            stopped = true
+                            bindCase()
+                        }
                     }
                 }
             }, 200)
         }
-    }
-
-    override fun onConfigurationChanged(newConfig: Configuration) {
-        super.onConfigurationChanged(newConfig)
-        bindCameraUseCase()
     }
 
     private fun bindCameraUseCase() {
@@ -79,6 +72,8 @@ class VideoFragment : BaseFragment<FragmentVideoBinding>() {
             // CameraProvider
             val cameraProvider =
                 cameraProvider ?: throw IllegalStateException("Camera initialization failed.")
+
+            Log.i("kanaku", "bindCameraUseCase: $lensFacing")
 
             val cameraSelector = CameraSelector.Builder().requireLensFacing(lensFacing).build()
 
@@ -126,23 +121,24 @@ class VideoFragment : BaseFragment<FragmentVideoBinding>() {
             viewModel.onPreviewBitmap(this)
         }
         stopRecording()
+        stopped = true
         super.onPause()
     }
 
     override fun onResume() {
-        Log.i("kanaku", "onResume:video $lensFacing")
+        Log.i("kanaku", "onResume:video $lensFacing stopped $stopped")
+       bindCase()
+        super.onResume()
+    }
+
+    private fun bindCase(){
+        Log.i("kanaku", "bindCase: $stopped")
         if (stopped) {
             binding.cameraPreviewView.invalidate()
             if (currentRecording == null) viewModel.onProgressValueUpdate(recordingDuration)
-            viewModel.lensFacing.observe(this){ lens ->
-                Log.i("kanaku", "onResume:132 $lens")
-                lensFacing = lens
-
-            }
             bindCameraUseCase()
             stopped = false
         }
-        super.onResume()
     }
 
     @SuppressLint("RestrictedApi", "MissingPermission")
@@ -253,10 +249,12 @@ class VideoFragment : BaseFragment<FragmentVideoBinding>() {
     }
 
     override fun onLensSwapCallback() {
+        Log.i("kanaku", "onLensSwapCallback: 245 video")
         binding.cameraPreviewView.bitmap?.let {
             viewModel.onPreviewBitmap(it)
         }
         defaultPostDelay {
+            Log.i("kanaku", "onLensSwapCallback: 260")
             super.onLensSwapCallback()
             bindCameraUseCase()
         }

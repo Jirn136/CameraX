@@ -12,9 +12,6 @@ class CameraViewModel : ViewModel() {
     var isLensFacingBack = MutableLiveData<Boolean>()
     var previewBitmap = MutableLiveData<Bitmap>()
 
-    private val mutableLensFacing = MutableLiveData<Int>()
-    val lensFacing: LiveData<Int> get() = mutableLensFacing
-
 
     fun onFlashState(state: Int) {
         flashState.value = state
@@ -36,7 +33,4 @@ class CameraViewModel : ViewModel() {
         previewBitmap.value = bitmap
     }
 
-    fun onLensFacing(lensId: Int) {
-        mutableLensFacing.value = lensId
-    }
 }
