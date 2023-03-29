@@ -1,8 +1,7 @@
 package com.example.cameraxintegration.fragment
 
-import android.content.Context
-import android.hardware.display.DisplayManager
 import android.os.Bundle
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -11,12 +10,15 @@ import androidx.camera.core.CameraSelector
 import androidx.camera.core.ImageCapture
 import androidx.camera.core.Preview
 import androidx.camera.lifecycle.ProcessCameraProvider
+import androidx.concurrent.futures.await
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProvider
 import androidx.viewbinding.ViewBinding
 import androidx.window.WindowManager
 import com.example.cameraxintegration.callbacks.CameraActionCallback
 import com.example.cameraxintegration.callbacks.ImageVideoResultCallback
+import com.example.cameraxintegration.utils.hasBackCamera
+import com.example.cameraxintegration.utils.hasFrontCamera
 import com.example.cameraxintegration.viewmodel.CameraViewModel
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
@@ -32,9 +34,6 @@ abstract class BaseFragment<VB : ViewBinding> : Fragment(), CameraActionCallback
     var cameraProvider: ProcessCameraProvider? = null
     var listener: ImageVideoResultCallback? = null
     lateinit var windowManager: WindowManager
-    val displayManager by lazy {
-        requireActivity().getSystemService(Context.DISPLAY_SERVICE) as DisplayManager
-    }
     val viewModel by lazy {
         ViewModelProvider(requireActivity()).get(CameraViewModel::class.java)
     }
@@ -62,6 +61,18 @@ abstract class BaseFragment<VB : ViewBinding> : Fragment(), CameraActionCallback
         viewModel.onFlashState(flashMode)
     }
 
+    suspend fun setupCamera() {
+        cameraProvider = ProcessCameraProvider.getInstance(requireContext()).await()
+
+        cameraProvider?.let {
+            lensFacing = when {
+                hasBackCamera(it) -> CameraSelector.LENS_FACING_BACK
+                hasFrontCamera(it) -> CameraSelector.LENS_FACING_FRONT
+                else -> throw IllegalStateException("Back and front camera are unavailable")
+            }
+        }
+    }
+
     protected abstract fun getViewBinding(inflater: LayoutInflater, container: ViewGroup?): VB
 
     fun imageVideoCallbackListener(listener: ImageVideoResultCallback) {
@@ -74,11 +85,16 @@ abstract class BaseFragment<VB : ViewBinding> : Fragment(), CameraActionCallback
         super.onPause()
     }
 
+    override fun onDestroyView() {
+        super.onDestroyView()
+        cameraExecutor.shutdown()
+    }
 
     override fun onLensSwapCallback() {
         lensFacing =
             if (CameraSelector.LENS_FACING_FRONT == lensFacing)
                 CameraSelector.LENS_FACING_BACK else CameraSelector.LENS_FACING_FRONT
+         viewModel.onLensFacing(lensFacing)
          viewModel.onLensFacingBack(lensFacing != CameraSelector.LENS_FACING_FRONT)
     }
 

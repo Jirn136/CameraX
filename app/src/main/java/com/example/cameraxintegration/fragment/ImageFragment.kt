@@ -14,8 +14,6 @@ import androidx.camera.core.CameraSelector
 import androidx.camera.core.ImageCapture
 import androidx.camera.core.ImageCaptureException
 import androidx.camera.core.Preview
-import androidx.camera.lifecycle.ProcessCameraProvider
-import androidx.concurrent.futures.await
 import androidx.lifecycle.lifecycleScope
 import com.example.cameraxintegration.R
 import com.example.cameraxintegration.databinding.FragmentCameraBinding
@@ -35,14 +33,15 @@ class ImageFragment : BaseFragment<FragmentCameraBinding>() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        displayManager.registerDisplayListener(displayListener, null)
+        Log.i("kanaku", "onViewCreated:camera $lensFacing")
 
         binding.apply {
             cameraPreviewView.post {
                 displayId = cameraPreviewView.display.displayId
 
                 lifecycleScope.launch {
-                    setUpCamera()
+                    setupCamera()
+                    bindCameraUseCase()
                 }
             }
         }
@@ -50,20 +49,6 @@ class ImageFragment : BaseFragment<FragmentCameraBinding>() {
 
     override fun onConfigurationChanged(newConfig: Configuration) {
         super.onConfigurationChanged(newConfig)
-        bindCameraUseCase()
-    }
-
-
-    private suspend fun setUpCamera() {
-        cameraProvider = ProcessCameraProvider.getInstance(requireContext()).await()
-
-        cameraProvider?.let {
-            lensFacing = when {
-                hasBackCamera(it) -> CameraSelector.LENS_FACING_BACK
-                hasFrontCamera(it) -> CameraSelector.LENS_FACING_FRONT
-                else -> throw IllegalStateException("Back and front camera are unavailable")
-            }
-        }
         bindCameraUseCase()
     }
 
@@ -123,13 +108,6 @@ class ImageFragment : BaseFragment<FragmentCameraBinding>() {
         }
     }
 
-
-    override fun onDestroyView() {
-        super.onDestroyView()
-        cameraExecutor.shutdown()
-        displayManager.unregisterDisplayListener(displayListener)
-    }
-
     override fun onPause() {
         binding.cameraPreviewView.bitmap?.apply {
             viewModel.onPreviewBitmap(this)
@@ -138,8 +116,14 @@ class ImageFragment : BaseFragment<FragmentCameraBinding>() {
     }
 
     override fun onResume() {
+        Log.i("kanaku", "onResume:camera $lensFacing")
         if (stopped) {
             binding.cameraPreviewView.invalidate()
+            viewModel.lensFacing.observe(this){ lens ->
+                Log.i("kanaku", "onResume:123 $lens")
+                lensFacing = lens
+
+            }
             bindCameraUseCase()
             stopped = false
         }

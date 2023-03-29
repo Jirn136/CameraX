@@ -3,7 +3,6 @@ package com.example.cameraxintegration.fragment
 import android.annotation.SuppressLint
 import android.content.ContentValues
 import android.content.res.Configuration
-import android.hardware.display.DisplayManager
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
@@ -16,9 +15,7 @@ import android.widget.Toast
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.ImageCapture
 import androidx.camera.core.Preview
-import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.video.*
-import androidx.concurrent.futures.await
 import androidx.core.util.Consumer
 import androidx.lifecycle.lifecycleScope
 import com.example.cameraxintegration.databinding.FragmentVideoBinding
@@ -43,7 +40,11 @@ class VideoFragment : BaseFragment<FragmentVideoBinding>() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        displayManager.registerDisplayListener(displayListener, null)
+        viewModel.lensFacing.observe(this){ lens ->
+            Log.i("kanaku", "onResume:44 $lens")
+            lensFacing = lens
+
+        }
 
         binding.apply {
             // Added Delay for binding the videoCapture useCase
@@ -53,24 +54,11 @@ class VideoFragment : BaseFragment<FragmentVideoBinding>() {
 
                     lifecycleScope.launch {
                         setupCamera()
+                        bindCameraUseCase()
                     }
                 }
             }, 200)
         }
-    }
-
-    private suspend fun setupCamera() {
-        cameraProvider = ProcessCameraProvider.getInstance(requireContext()).await()
-
-        cameraProvider?.let {
-            lensFacing = when {
-                hasBackCamera(it) -> CameraSelector.LENS_FACING_BACK
-                hasFrontCamera(it) -> CameraSelector.LENS_FACING_FRONT
-                else -> throw IllegalStateException("Back and front camera are unavailable")
-            }
-        }
-
-        bindCameraUseCase()
     }
 
     override fun onConfigurationChanged(newConfig: Configuration) {
@@ -142,38 +130,20 @@ class VideoFragment : BaseFragment<FragmentVideoBinding>() {
     }
 
     override fun onResume() {
+        Log.i("kanaku", "onResume:video $lensFacing")
         if (stopped) {
             binding.cameraPreviewView.invalidate()
             if (currentRecording == null) viewModel.onProgressValueUpdate(recordingDuration)
+            viewModel.lensFacing.observe(this){ lens ->
+                Log.i("kanaku", "onResume:132 $lens")
+                lensFacing = lens
+
+            }
             bindCameraUseCase()
             stopped = false
         }
         super.onResume()
     }
-
-    override fun onDestroyView() {
-        super.onDestroyView()
-        cameraExecutor.shutdown()
-        displayManager.unregisterDisplayListener(displayListener)
-    }
-
-    /*    *
-* We need a display listener for orientation changes that do not trigger a configuration
-* change, for example if we choose to override config change in manifest or for 180-degree
-* orientation changes.*/
-
-    private val displayListener = object : DisplayManager.DisplayListener {
-        override fun onDisplayAdded(displayId: Int) = Unit
-        override fun onDisplayRemoved(displayId: Int) = Unit
-
-        @SuppressLint("RestrictedApi")
-        override fun onDisplayChanged(displayId: Int) = view?.let { view ->
-            if (displayId == this@VideoFragment.displayId) {
-                videoCapture.targetRotation = view.display.rotation
-            }
-        } ?: Unit
-    }
-
 
     @SuppressLint("RestrictedApi", "MissingPermission")
     private fun startRecording() {

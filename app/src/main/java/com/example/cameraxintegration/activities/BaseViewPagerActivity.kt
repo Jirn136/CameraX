@@ -136,29 +136,26 @@ class BaseViewPagerActivity : AppCompatActivity() {
 
                 isLensFacingBack.observe(this@BaseViewPagerActivity) { lensFacingBack ->
                     transitionPreview.show()
-                    imgFlash.apply {
-                        if (lensFacingBack) {
-                            imgCameraType.apply {
-                                setImageResource(R.drawable.ic_outdoor)
-                                show()
-                                defaultPostDelay { this.gone() }
-                            }
+                    if (lensFacingBack) {
+                        imgCameraType.apply {
+                            setImageResource(R.drawable.ic_outdoor)
                             show()
-
-                        } else {
-                            imgCameraType.apply {
-                                setImageResource(R.drawable.ic_person)
-                                show()
-                                defaultPostDelay { this.gone() }
-                            }
-                            gone()
+                            defaultPostDelay { this.gone() }
                         }
+                        imgFlash.show()
+
+                    } else {
+                        imgCameraType.apply {
+                            setImageResource(R.drawable.ic_person)
+                            show()
+                            defaultPostDelay { this.gone() }
+                        }
+                        imgFlash.gone()
                     }
                     defaultPostDelay { transitionPreview.gone() }
                 }
 
                 previewBitmap.observe(this@BaseViewPagerActivity) { bitmap ->
-                    Log.i("kanaku", "handleObservers: $bitmap")
                     transitionPreview.setImageBitmap(bitmap)
                 }
             }
