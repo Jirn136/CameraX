@@ -1,9 +1,7 @@
 package com.example.cameraxintegration.fragment
 
-import android.Manifest
 import android.annotation.SuppressLint
 import android.content.ContentValues
-import android.content.pm.PackageManager
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
@@ -18,7 +16,6 @@ import androidx.camera.core.Preview
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.video.*
 import androidx.concurrent.futures.await
-import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.core.util.Consumer
 import androidx.lifecycle.lifecycleScope
@@ -48,8 +45,6 @@ class VideoFragment : BaseFragment<FragmentVideoBinding>() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-
-        Log.i("kanaku", "onViewCreated: ")
 
         binding.apply {
             // Added Delay for binding the videoCapture useCase
@@ -125,7 +120,6 @@ class VideoFragment : BaseFragment<FragmentVideoBinding>() {
 
     override fun onResume() {
         super.onResume()
-        Log.i("kanaku", "onResume: ")
         binding.cameraPreviewView.invalidate()
         viewModel.onProgressValueUpdate(recordingDuration)
         viewLifecycleOwner.lifecycleScope.launch {
