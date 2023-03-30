@@ -1,7 +1,6 @@
 package com.example.cameraxintegration.fragment
 
 import android.os.Bundle
-import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -15,20 +14,18 @@ import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProvider
 import androidx.viewbinding.ViewBinding
 import androidx.window.WindowManager
+import com.example.cameraxintegration.activities.BaseViewPagerActivity.Companion.lensFacing
 import com.example.cameraxintegration.callbacks.CameraActionCallback
 import com.example.cameraxintegration.callbacks.ImageVideoResultCallback
 import com.example.cameraxintegration.utils.hasBackCamera
 import com.example.cameraxintegration.utils.hasFrontCamera
 import com.example.cameraxintegration.viewmodel.CameraViewModel
-import java.util.concurrent.ExecutorService
-import java.util.concurrent.Executors
 
 abstract class BaseFragment<VB : ViewBinding> : Fragment(), CameraActionCallback {
 
     private var _binding: VB? = null
     protected val binding get() = _binding!!
 
-    var displayId: Int = -1
     var camera: Camera? = null
     var cameraProvider: ProcessCameraProvider? = null
     var listener: ImageVideoResultCallback? = null
@@ -38,10 +35,6 @@ abstract class BaseFragment<VB : ViewBinding> : Fragment(), CameraActionCallback
     }
     var preview: Preview? = null
     var flashMode = ImageCapture.FLASH_MODE_AUTO
-
-
-    /** Blocking camera operations are performed using this executor */
-    lateinit var cameraExecutor: ExecutorService
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -54,7 +47,6 @@ abstract class BaseFragment<VB : ViewBinding> : Fragment(), CameraActionCallback
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-        cameraExecutor = Executors.newSingleThreadExecutor()
         windowManager = WindowManager(view.context)
         viewModel.onFlashState(flashMode)
     }
@@ -63,7 +55,6 @@ abstract class BaseFragment<VB : ViewBinding> : Fragment(), CameraActionCallback
         cameraProvider = ProcessCameraProvider.getInstance(requireContext()).await()
 
         cameraProvider?.let {
-            Log.i("kanaku", "setupCamera: 66")
             lensFacing = when {
                 hasBackCamera(it) -> CameraSelector.LENS_FACING_BACK
                 hasFrontCamera(it) -> CameraSelector.LENS_FACING_FRONT
@@ -78,14 +69,9 @@ abstract class BaseFragment<VB : ViewBinding> : Fragment(), CameraActionCallback
         this.listener = listener
     }
 
-    override fun onPause() {
-        cameraProvider?.unbindAll()
-        super.onPause()
-    }
-
     override fun onDestroyView() {
+        _binding = null
         super.onDestroyView()
-        cameraExecutor.shutdown()
     }
 
     override fun onLensSwapCallback() {
@@ -108,9 +94,5 @@ abstract class BaseFragment<VB : ViewBinding> : Fragment(), CameraActionCallback
 
     override fun onCaptureCallback() {
 //        TODO("Not yet implemented")
-    }
-
-    companion object {
-        var lensFacing = CameraSelector.LENS_FACING_BACK
     }
 }

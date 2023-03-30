@@ -8,6 +8,7 @@ import android.os.Bundle
 import android.util.Log
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import androidx.camera.core.CameraSelector
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.ViewModelProvider
@@ -39,7 +40,7 @@ class BaseViewPagerActivity : AppCompatActivity() {
         ViewModelProvider(this).get(CameraViewModel::class.java)
     }
 
-    private var videoDuration = 0
+    private var videoDuration = DEFAULT_DURATION
 
     private var tabPosition = 0
 
@@ -65,7 +66,7 @@ class BaseViewPagerActivity : AppCompatActivity() {
             REQUEST_CODE_PERMISSIONS
         )
 
-        videoDuration = intent.getIntExtra(MAX_REC_DURATION, 5)
+        videoDuration = intent.getIntExtra(MAX_REC_DURATION, DEFAULT_DURATION)
 
         handleObservers()
 
@@ -274,5 +275,8 @@ class BaseViewPagerActivity : AppCompatActivity() {
             Manifest.permission.RECORD_AUDIO
         )
         private const val IMMERSIVE_FLAG_TIMEOUT = 500L
+        private const val DEFAULT_DURATION = 30
+
+        var lensFacing = CameraSelector.LENS_FACING_BACK
     }
 }

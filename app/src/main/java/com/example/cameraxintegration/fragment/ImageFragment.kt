@@ -14,15 +14,21 @@ import androidx.camera.core.ImageCaptureException
 import androidx.camera.core.Preview
 import androidx.lifecycle.lifecycleScope
 import com.example.cameraxintegration.R
+import com.example.cameraxintegration.activities.BaseViewPagerActivity.Companion.lensFacing
 import com.example.cameraxintegration.databinding.FragmentCameraBinding
 import com.example.cameraxintegration.utils.*
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.*
+import java.util.concurrent.ExecutorService
+import java.util.concurrent.Executors
 
 class ImageFragment : BaseFragment<FragmentCameraBinding>() {
     private var imageCapture: ImageCapture? = null
     private var stopped = false
+
+    /** Blocking camera operations are performed using this executor */
+    private lateinit var cameraExecutor: ExecutorService
 
     override fun getViewBinding(
         inflater: LayoutInflater,
@@ -31,13 +37,10 @@ class ImageFragment : BaseFragment<FragmentCameraBinding>() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-
-        Log.i("kanaku", "onViewCreated:camera $lensFacing")
+        cameraExecutor = Executors.newSingleThreadExecutor()
 
         binding.apply {
             cameraPreviewView.post {
-                displayId = cameraPreviewView.display.displayId
-
                 lifecycleScope.launch {
                     setupCamera()
                     bindCameraUseCase()
@@ -106,12 +109,12 @@ class ImageFragment : BaseFragment<FragmentCameraBinding>() {
         binding.cameraPreviewView.bitmap?.apply {
             viewModel.onPreviewBitmap(this)
         }
+        cameraProvider?.unbind(imageCapture)
         stopped = true
         super.onPause()
     }
 
     override fun onResume() {
-        Log.i("kanaku", "onResume:camera $lensFacing")
         if (stopped) {
             binding.cameraPreviewView.invalidate()
             bindCameraUseCase()
@@ -127,7 +130,6 @@ class ImageFragment : BaseFragment<FragmentCameraBinding>() {
     }
 
     override fun onLensSwapCallback() {
-        Log.i("kanaku", "onLensSwapCallback: 150 image")
         binding.cameraPreviewView.bitmap?.let {
             viewModel.onPreviewBitmap(it)
         }

@@ -1,8 +1,11 @@
 package com.example.cameraxintegration.utils
 
 import android.app.Activity
+import android.content.Context
+import android.net.Uri
 import android.os.Handler
 import android.os.Looper
+import android.provider.OpenableColumns
 import android.view.View
 import androidx.camera.core.AspectRatio
 import androidx.camera.core.CameraSelector
@@ -92,4 +95,24 @@ fun defaultPostDelay(action: () -> Unit) {
     Handler(Looper.getMainLooper()).postDelayed({
         action()
     }, POST_DELAY_DURATION)
+}
+
+/**
+ * A helper function to retrieve the captured file size.
+ */
+fun isValidFile(context: Context, contentUri: Uri): Boolean {
+    val cursor = context
+        .contentResolver
+        .query(contentUri, null, null, null, null)
+        ?: return false
+
+    val sizeIndex = cursor.getColumnIndex(OpenableColumns.SIZE)
+    cursor.moveToFirst()
+
+    val fileSize = cursor.use {
+        it.getLong(sizeIndex)
+    }
+
+    return fileSize > 0
+
 }

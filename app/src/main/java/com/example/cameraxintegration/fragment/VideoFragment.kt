@@ -1,8 +1,9 @@
 package com.example.cameraxintegration.fragment
 
+import android.Manifest
 import android.annotation.SuppressLint
 import android.content.ContentValues
-import android.content.res.Configuration
+import android.content.pm.PackageManager
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
@@ -11,13 +12,17 @@ import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.Toast
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.ImageCapture
 import androidx.camera.core.Preview
+import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.video.*
+import androidx.concurrent.futures.await
+import androidx.core.app.ActivityCompat
+import androidx.core.content.ContextCompat
 import androidx.core.util.Consumer
 import androidx.lifecycle.lifecycleScope
+import com.example.cameraxintegration.activities.BaseViewPagerActivity.Companion.lensFacing
 import com.example.cameraxintegration.databinding.FragmentVideoBinding
 import com.example.cameraxintegration.utils.*
 import kotlinx.coroutines.launch
@@ -29,9 +34,12 @@ class VideoFragment : BaseFragment<FragmentVideoBinding>() {
 
     private lateinit var videoCapture: VideoCapture<Recorder>
     private var currentRecording: Recording? = null
-    private lateinit var recordingState: VideoRecordEvent
-    private var startTime = 0L
     private var stopped = false
+
+    /** Blocking camera operations are performed using this executor */
+    private val cameraExecutor by lazy {
+        ContextCompat.getMainExecutor(requireContext())
+    }
 
     override fun getViewBinding(
         inflater: LayoutInflater,
@@ -41,26 +49,21 @@ class VideoFragment : BaseFragment<FragmentVideoBinding>() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
+        Log.i("kanaku", "onViewCreated: ")
+
         binding.apply {
             // Added Delay for binding the videoCapture useCase
             Handler(Looper.getMainLooper()).postDelayed({
-                cameraPreviewView.post {
-                    displayId = cameraPreviewView.display.displayId
-
-                    lifecycleScope.launch {
-                        setupCamera().let {
-                            Log.i("kanaku", "onViewCreated: 52")
-                            stopped = true
-                            bindCase()
-                        }
-                    }
+                lifecycleScope.launch {
+                    bindCameraUseCase()
                 }
             }, 200)
         }
     }
 
-    private fun bindCameraUseCase() {
+    private suspend fun bindCameraUseCase() {
         binding.apply {
+            val cameraProvider = ProcessCameraProvider.getInstance(requireContext()).await()
             val metrics = windowManager.getCurrentWindowMetrics().bounds
             Log.d(TAG, "Screen metrics: ${metrics.width()} x ${metrics.height()}")
 
@@ -68,12 +71,6 @@ class VideoFragment : BaseFragment<FragmentVideoBinding>() {
             Log.d(TAG, "Preview aspect ratio: $screenAspectRatio")
 
             val rotation = cameraPreviewView.display?.rotation
-
-            // CameraProvider
-            val cameraProvider =
-                cameraProvider ?: throw IllegalStateException("Camera initialization failed.")
-
-            Log.i("kanaku", "bindCameraUseCase: $lensFacing")
 
             val cameraSelector = CameraSelector.Builder().requireLensFacing(lensFacing).build()
 
@@ -121,25 +118,21 @@ class VideoFragment : BaseFragment<FragmentVideoBinding>() {
             viewModel.onPreviewBitmap(this)
         }
         stopRecording()
+        cameraProvider?.unbind(videoCapture)
         stopped = true
         super.onPause()
     }
 
     override fun onResume() {
-        Log.i("kanaku", "onResume:video $lensFacing stopped $stopped")
-       bindCase()
         super.onResume()
-    }
-
-    private fun bindCase(){
-        Log.i("kanaku", "bindCase: $stopped")
-        if (stopped) {
-            binding.cameraPreviewView.invalidate()
-            if (currentRecording == null) viewModel.onProgressValueUpdate(recordingDuration)
+        Log.i("kanaku", "onResume: ")
+        binding.cameraPreviewView.invalidate()
+        viewModel.onProgressValueUpdate(recordingDuration)
+        viewLifecycleOwner.lifecycleScope.launch {
             bindCameraUseCase()
-            stopped = false
         }
     }
+
 
     @SuppressLint("RestrictedApi", "MissingPermission")
     private fun startRecording() {
@@ -153,15 +146,14 @@ class VideoFragment : BaseFragment<FragmentVideoBinding>() {
         val mediaStoreOutput = MediaStoreOutputOptions.Builder(
             requireActivity().contentResolver,
             MediaStore.Video.Media.EXTERNAL_CONTENT_URI
-        )
-            .setContentValues(contentValues)
+        ).setContentValues(contentValues)
             .build()
 
         // configure Recorder and Start recording to the mediaStoreOutput.
-        currentRecording?.let {
-            it.stop()
-            currentRecording = null
-        }
+        /* currentRecording?.let {
+             it.stop()
+             currentRecording = null
+         }*/
         videoCapture.camera?.cameraControl?.enableTorch(
             (flashMode == ImageCapture.FLASH_MODE_AUTO || flashMode == ImageCapture.FLASH_MODE_ON)
         )
@@ -169,6 +161,7 @@ class VideoFragment : BaseFragment<FragmentVideoBinding>() {
             .prepareRecording(requireActivity(), mediaStoreOutput)
             .apply { withAudioEnabled() }
             .start(cameraExecutor, captureListener)
+
         requireActivity().runOnUiThread {
             viewModel.onVideoRecording(false)
         }
@@ -180,37 +173,19 @@ class VideoFragment : BaseFragment<FragmentVideoBinding>() {
      * CaptureEvent listener.
      */
     private val captureListener = Consumer<VideoRecordEvent> { event ->
-        // cache the recording state
-        if (event !is VideoRecordEvent.Status) recordingState = event
 
-        Log.i("TAG", "event: $event")
+        Log.i("TAG", "event: $event recDuration: $recordingDuration")
 
         updateUI(event)
 
-        if (event is VideoRecordEvent.Start) startTime = System.currentTimeMillis()
-
-
         if (event is VideoRecordEvent.Finalize) {
-            if ((System.currentTimeMillis() - startTime) < 1000) {
-                runOnUiThread {
-                    Toast.makeText(
-                        requireContext(),
-                        "Recording time difference is lesser than 1 second",
-                        Toast.LENGTH_SHORT
-                    ).show()
-                    viewModel.onProgressValueUpdate(recordingDuration)
-                }
-                stopRecording()
-
-            } else {
-                // display the captured video
-                Log.i("TAG", "captureListener: ${event.outputResults.outputUri}")
-                runOnUiThread {
-                    viewModel.onProgressValueUpdate(recordingDuration)
-                }
-                listener?.onImageVideoResult(event.outputResults.outputUri)
-//            requireActivity().finish()
+            // display the captured video
+            Log.i("TAG", "captureListener: ${event.outputResults.outputUri}")
+            runOnUiThread {
+                viewModel.onProgressValueUpdate(recordingDuration)
             }
+            listener?.onImageVideoResult(event.outputResults.outputUri)
+//            requireActivity().finish()
         }
     }
 
@@ -229,12 +204,13 @@ class VideoFragment : BaseFragment<FragmentVideoBinding>() {
 
     @SuppressLint("RestrictedApi")
     private fun stopRecording() {
-        currentRecording?.let {
+        val recording = currentRecording
+        if (recording != null) {
             videoCapture.camera?.cameraControl?.enableTorch(false)
             runOnUiThread {
                 viewModel.onVideoRecording(true)
             }
-            it.stop()
+            recording.stop()
             currentRecording = null
         }
     }
@@ -249,14 +225,14 @@ class VideoFragment : BaseFragment<FragmentVideoBinding>() {
     }
 
     override fun onLensSwapCallback() {
-        Log.i("kanaku", "onLensSwapCallback: 245 video")
         binding.cameraPreviewView.bitmap?.let {
             viewModel.onPreviewBitmap(it)
         }
         defaultPostDelay {
-            Log.i("kanaku", "onLensSwapCallback: 260")
             super.onLensSwapCallback()
-            bindCameraUseCase()
+            viewLifecycleOwner.lifecycleScope.launch {
+                bindCameraUseCase()
+            }
         }
     }
 
