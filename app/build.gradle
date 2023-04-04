@@ -9,7 +9,7 @@ android {
 
     defaultConfig {
         applicationId "com.example.cameraxintegration"
-        minSdk 28
+        minSdk 27
         targetSdk 31
         versionCode 1
         versionName "1.0"
@@ -54,7 +54,7 @@ dependencies {
     androidTestImplementation 'androidx.test.espresso:espresso-core:3.5.1'
 
     //WindowManager
-    implementation 'androidx.window:window:1.0.0-alpha09'
+    implementation 'androidx.window:window:1.0.0'
 //    implementation project(path: ':videoapp')
 //    implementation project(path: ':imageapp')
 

@@ -13,6 +13,7 @@ import androidx.camera.core.ImageCapture
 import androidx.camera.core.ImageCaptureException
 import androidx.camera.core.Preview
 import androidx.lifecycle.lifecycleScope
+import androidx.window.layout.WindowMetricsCalculator
 import com.example.cameraxintegration.R
 import com.example.cameraxintegration.activities.BaseViewPagerActivity.Companion.lensFacing
 import com.example.cameraxintegration.databinding.FragmentCameraBinding
@@ -51,7 +52,8 @@ class ImageFragment : BaseFragment<FragmentCameraBinding>() {
 
     private fun bindCameraUseCase() {
         binding.apply {
-            val metrics = windowManager.getCurrentWindowMetrics().bounds
+            val metrics = WindowMetricsCalculator.getOrCreate()
+                .computeCurrentWindowMetrics(requireActivity()).bounds
             Log.d(TAG, "Screen metrics: ${metrics.width()} x ${metrics.height()}")
 
             val screenAspectRatio = aspectRatio(metrics.width(), metrics.height())

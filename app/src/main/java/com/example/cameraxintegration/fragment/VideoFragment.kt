@@ -19,6 +19,7 @@ import androidx.concurrent.futures.await
 import androidx.core.content.ContextCompat
 import androidx.core.util.Consumer
 import androidx.lifecycle.lifecycleScope
+import androidx.window.layout.WindowMetricsCalculator
 import com.example.cameraxintegration.activities.BaseViewPagerActivity.Companion.lensFacing
 import com.example.cameraxintegration.databinding.FragmentVideoBinding
 import com.example.cameraxintegration.utils.*
@@ -59,7 +60,8 @@ class VideoFragment : BaseFragment<FragmentVideoBinding>() {
     private suspend fun bindCameraUseCase() {
         binding.apply {
             val cameraProvider = ProcessCameraProvider.getInstance(requireContext()).await()
-            val metrics = windowManager.getCurrentWindowMetrics().bounds
+            val metrics = WindowMetricsCalculator.getOrCreate()
+                .computeCurrentWindowMetrics(requireActivity()).bounds
             Log.d(TAG, "Screen metrics: ${metrics.width()} x ${metrics.height()}")
 
             val screenAspectRatio = aspectRatio(metrics.width(), metrics.height())

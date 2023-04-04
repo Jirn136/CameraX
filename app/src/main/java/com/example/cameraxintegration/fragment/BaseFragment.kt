@@ -13,7 +13,7 @@ import androidx.concurrent.futures.await
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProvider
 import androidx.viewbinding.ViewBinding
-import androidx.window.WindowManager
+import androidx.window.layout.WindowInfoTracker
 import com.example.cameraxintegration.activities.BaseViewPagerActivity.Companion.lensFacing
 import com.example.cameraxintegration.callbacks.CameraActionCallback
 import com.example.cameraxintegration.callbacks.ImageVideoResultCallback
@@ -29,7 +29,7 @@ abstract class BaseFragment<VB : ViewBinding> : Fragment(), CameraActionCallback
     var camera: Camera? = null
     var cameraProvider: ProcessCameraProvider? = null
     var listener: ImageVideoResultCallback? = null
-    lateinit var windowManager: WindowManager
+    lateinit var windowManager: WindowInfoTracker
     val viewModel by lazy {
         ViewModelProvider(requireActivity()).get(CameraViewModel::class.java)
     }
@@ -47,7 +47,7 @@ abstract class BaseFragment<VB : ViewBinding> : Fragment(), CameraActionCallback
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-        windowManager = WindowManager(view.context)
+        windowManager = WindowInfoTracker.getOrCreate(view.context)
         viewModel.onFlashState(flashMode)
     }
 
