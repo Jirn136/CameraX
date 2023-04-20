@@ -1,7 +1,6 @@
-package com.example.cameraxintegration.viewmodel
+package com.example.camerX.viewmodel
 
 import android.graphics.Bitmap
-import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 

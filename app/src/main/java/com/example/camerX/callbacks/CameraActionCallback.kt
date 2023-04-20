@@ -1,4 +1,4 @@
-package com.example.cameraxintegration.callbacks
+package com.example.camerX.callbacks
 
 interface CameraActionCallback {
     fun onLensSwapCallback()

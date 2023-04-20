@@ -1,4 +1,4 @@
-package com.example.cameraxintegration.fragment
+package com.example.camerX.fragment
 
 import android.os.Bundle
 import android.view.LayoutInflater
@@ -14,13 +14,12 @@ import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProvider
 import androidx.viewbinding.ViewBinding
 import androidx.window.layout.WindowInfoTracker
-import com.example.cameraxintegration.activities.BaseViewPagerActivity.Companion.flashMode
-import com.example.cameraxintegration.activities.BaseViewPagerActivity.Companion.lensFacing
-import com.example.cameraxintegration.callbacks.CameraActionCallback
-import com.example.cameraxintegration.callbacks.ImageVideoResultCallback
-import com.example.cameraxintegration.utils.hasBackCamera
-import com.example.cameraxintegration.utils.hasFrontCamera
-import com.example.cameraxintegration.viewmodel.CameraViewModel
+import com.example.camerX.activities.BaseViewPagerActivity.Companion.flashMode
+import com.example.camerX.activities.BaseViewPagerActivity.Companion.lensFacing
+import com.example.camerX.callbacks.CameraActionCallback
+import com.example.camerX.utils.hasBackCamera
+import com.example.camerX.utils.hasFrontCamera
+import com.example.camerX.viewmodel.CameraViewModel
 
 abstract class BaseFragment<VB : ViewBinding> : Fragment(), CameraActionCallback {
 

@@ -1,4 +1,4 @@
-package com.example.cameraxintegration.utils
+package com.example.camerX.utils
 
 import android.Manifest
 import android.app.Activity

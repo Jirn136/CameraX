@@ -1,4 +1,4 @@
-package com.example.cameraxintegration.adapter
+package com.example.camerX.adapter
 
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentActivity

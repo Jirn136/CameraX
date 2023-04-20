@@ -1,4 +1,4 @@
-package com.example.cameraxintegration.fragment
+package com.example.camerX.fragment
 
 import android.annotation.SuppressLint
 import android.content.ContentValues
@@ -30,18 +30,18 @@ import androidx.core.content.ContextCompat
 import androidx.core.util.Consumer
 import androidx.lifecycle.lifecycleScope
 import androidx.window.layout.WindowMetricsCalculator
-import com.example.cameraxintegration.activities.BaseViewPagerActivity.Companion.flashMode
-import com.example.cameraxintegration.activities.BaseViewPagerActivity.Companion.lensFacing
+import com.example.camerX.activities.BaseViewPagerActivity.Companion.flashMode
+import com.example.camerX.activities.BaseViewPagerActivity.Companion.lensFacing
+import com.example.camerX.utils.FILENAME_FORMAT
+import com.example.camerX.utils.TAG
+import com.example.camerX.utils.aspectRatio
+import com.example.camerX.utils.defaultPostDelay
+import com.example.camerX.utils.gone
+import com.example.camerX.utils.ifElse
+import com.example.camerX.utils.listener
+import com.example.camerX.utils.runOnUiThread
+import com.example.camerX.utils.show
 import com.example.cameraxintegration.databinding.FragmentVideoBinding
-import com.example.cameraxintegration.utils.FILENAME_FORMAT
-import com.example.cameraxintegration.utils.TAG
-import com.example.cameraxintegration.utils.aspectRatio
-import com.example.cameraxintegration.utils.defaultPostDelay
-import com.example.cameraxintegration.utils.gone
-import com.example.cameraxintegration.utils.ifElse
-import com.example.cameraxintegration.utils.listener
-import com.example.cameraxintegration.utils.runOnUiThread
-import com.example.cameraxintegration.utils.show
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.Locale
@@ -95,22 +95,24 @@ class VideoFragment : BaseFragment<FragmentVideoBinding>() {
 
             val cameraSelector = CameraSelector.Builder().requireLensFacing(lensFacing).build()
 
-            val cameraMetaData = if(lensFacing == CameraSelector.LENS_FACING_BACK)
+            val cameraMetaData = if (lensFacing == CameraSelector.LENS_FACING_BACK)
                 CameraMetadata.LENS_FACING_BACK else CameraMetadata.LENS_FACING_FRONT
             Log.i(TAG, "lensFacing $lensFacing metadata:$cameraMetaData")
 
             val cameraInfo = cameraProvider?.availableCameraInfos?.filter {
                 Camera2CameraInfo.from(it).getCameraCharacteristic(
-                    CameraCharacteristics.LENS_FACING) == cameraMetaData
+                    CameraCharacteristics.LENS_FACING
+                ) == cameraMetaData
             }
 
             val supportedQualities = QualitySelector.getSupportedQualities(cameraInfo!![0])
 
-            val filteredQualities  = arrayListOf(Quality.UHD, Quality.FHD,Quality.HD,Quality.SD)
+            val filteredQualities = arrayListOf(Quality.UHD, Quality.FHD, Quality.HD, Quality.SD)
                 .filter { supportedQualities.contains(it) }
 
             val qualitySelector = filteredQualities.let {
-                QualitySelector.fromOrderedList(it,
+                QualitySelector.fromOrderedList(
+                    it,
                     FallbackStrategy.higherQualityOrLowerThan(Quality.HD)
                 )
             }
@@ -191,8 +193,10 @@ class VideoFragment : BaseFragment<FragmentVideoBinding>() {
             .build()
 
         // configure Recorder and Start recording to the mediaStoreOutput.
-        videoCapture.camera?.cameraControl?.enableTorch(flashMode ==
-                ImageCapture.FLASH_MODE_AUTO || flashMode == ImageCapture.FLASH_MODE_ON)
+        videoCapture.camera?.cameraControl?.enableTorch(
+            flashMode ==
+                    ImageCapture.FLASH_MODE_AUTO || flashMode == ImageCapture.FLASH_MODE_ON
+        )
         currentRecording = videoCapture.output
             .prepareRecording(requireActivity(), mediaStoreOutput)
             .apply { withAudioEnabled() }

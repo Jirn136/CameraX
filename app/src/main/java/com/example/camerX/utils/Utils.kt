@@ -1,4 +1,4 @@
-package com.example.cameraxintegration.utils
+package com.example.camerX.utils
 
 import android.app.Activity
 import android.content.Context
@@ -13,7 +13,7 @@ import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
-import com.example.cameraxintegration.callbacks.ImageVideoResultCallback
+import com.example.camerX.callbacks.ImageVideoResultCallback
 import kotlin.math.abs
 import kotlin.math.max
 import kotlin.math.min

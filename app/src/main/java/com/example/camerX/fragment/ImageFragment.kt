@@ -1,4 +1,4 @@
-package com.example.cameraxintegration.fragment
+package com.example.camerX.fragment
 
 import android.content.ContentValues
 import android.os.Build
@@ -14,14 +14,19 @@ import androidx.camera.core.ImageCaptureException
 import androidx.camera.core.Preview
 import androidx.lifecycle.lifecycleScope
 import androidx.window.layout.WindowMetricsCalculator
+import com.example.camerX.activities.BaseViewPagerActivity.Companion.flashMode
+import com.example.camerX.activities.BaseViewPagerActivity.Companion.lensFacing
+import com.example.camerX.utils.FILENAME
+import com.example.camerX.utils.PHOTO_TYPE
+import com.example.camerX.utils.TAG
+import com.example.camerX.utils.aspectRatio
+import com.example.camerX.utils.defaultPostDelay
+import com.example.camerX.utils.listener
 import com.example.cameraxintegration.R
-import com.example.cameraxintegration.activities.BaseViewPagerActivity.Companion.flashMode
-import com.example.cameraxintegration.activities.BaseViewPagerActivity.Companion.lensFacing
 import com.example.cameraxintegration.databinding.FragmentCameraBinding
-import com.example.cameraxintegration.utils.*
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
-import java.util.*
+import java.util.Locale
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 
@@ -123,8 +128,8 @@ class ImageFragment : BaseFragment<FragmentCameraBinding>() {
     override fun onResume() {
         if (stopped) {
             binding.cameraPreviewView.invalidate()
-            viewLifecycleOwner.lifecycleScope.launch{
-            bindCameraUseCase()
+            viewLifecycleOwner.lifecycleScope.launch {
+                bindCameraUseCase()
             }
             stopped = false
         }

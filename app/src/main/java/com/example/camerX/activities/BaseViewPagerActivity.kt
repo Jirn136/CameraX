@@ -1,4 +1,4 @@
-package com.example.cameraxintegration.activities
+package com.example.camerX.activities
 
 import android.Manifest
 import android.content.pm.PackageManager
@@ -13,15 +13,27 @@ import androidx.camera.core.ImageCapture
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.ViewModelProvider
-import androidx.viewpager2.widget.ViewPager2.*
+import androidx.viewpager2.widget.ViewPager2.ORIENTATION_HORIZONTAL
+import androidx.viewpager2.widget.ViewPager2.OnPageChangeCallback
+import androidx.viewpager2.widget.ViewPager2.SCROLL_STATE_IDLE
+import androidx.viewpager2.widget.ViewPager2.SCROLL_STATE_SETTLING
+import com.example.camerX.adapter.ViewPagerAdapter
+import com.example.camerX.callbacks.CameraActionCallback
+import com.example.camerX.fragment.ImageFragment
+import com.example.camerX.fragment.VideoFragment
+import com.example.camerX.utils.MAX_REC_DURATION
+import com.example.camerX.utils.counterText
+import com.example.camerX.utils.defaultPostDelay
+import com.example.camerX.utils.gone
+import com.example.camerX.utils.hideStatusBar
+import com.example.camerX.utils.hideSystemUI
+import com.example.camerX.utils.ifElse
+import com.example.camerX.utils.makeViewsGone
+import com.example.camerX.utils.setupScreen
+import com.example.camerX.utils.show
+import com.example.camerX.viewmodel.CameraViewModel
 import com.example.cameraxintegration.R
-import com.example.cameraxintegration.adapter.ViewPagerAdapter
-import com.example.cameraxintegration.callbacks.CameraActionCallback
 import com.example.cameraxintegration.databinding.ActivityBaseViewPagerBinding
-import com.example.cameraxintegration.fragment.ImageFragment
-import com.example.cameraxintegration.fragment.VideoFragment
-import com.example.cameraxintegration.utils.*
-import com.example.cameraxintegration.viewmodel.CameraViewModel
 import com.google.android.material.tabs.TabLayoutMediator
 
 class BaseViewPagerActivity : AppCompatActivity() {
@@ -121,8 +133,8 @@ class BaseViewPagerActivity : AppCompatActivity() {
                         this.isEnabled = false
                         if (videoRecState) show() else gone()
                     }
-                    if(videoRecState) imgCapture.isEnabled = false
-                    makeViewsGone(imgFlash,imgSwap)
+                    if (videoRecState) imgCapture.isEnabled = false
+                    makeViewsGone(imgFlash, imgSwap)
                     imgFlash.isEnabled = videoRecState
                     imgSwap.isEnabled = videoRecState
                 }
@@ -240,8 +252,8 @@ class BaseViewPagerActivity : AppCompatActivity() {
         super.onResume()
         videoDuration = intent.getIntExtra(MAX_REC_DURATION, DEFAULT_DURATION)
 
-        if(!::imageFragment.isInitialized) imageFragment =  ImageFragment.newInstance()
-        if(!::videoFragment.isInitialized) videoFragment =  VideoFragment.newInstance(videoDuration)
+        if (!::imageFragment.isInitialized) imageFragment = ImageFragment.newInstance()
+        if (!::videoFragment.isInitialized) videoFragment = VideoFragment.newInstance(videoDuration)
 
         binding.transitionPreview.gone()
 
