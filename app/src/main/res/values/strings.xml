@@ -8,4 +8,5 @@
     <string name="title_video">Video</string>
     <string name="capture_type">capture Type</string>
     <string name="preview">preview</string>
+    <string name="permission_not_granted">Permissions not granted by the user.</string>
 </resources>

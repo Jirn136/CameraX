@@ -14,6 +14,7 @@ import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProvider
 import androidx.viewbinding.ViewBinding
 import androidx.window.layout.WindowInfoTracker
+import com.example.cameraxintegration.activities.BaseViewPagerActivity.Companion.flashMode
 import com.example.cameraxintegration.activities.BaseViewPagerActivity.Companion.lensFacing
 import com.example.cameraxintegration.callbacks.CameraActionCallback
 import com.example.cameraxintegration.callbacks.ImageVideoResultCallback
@@ -28,13 +29,11 @@ abstract class BaseFragment<VB : ViewBinding> : Fragment(), CameraActionCallback
 
     var camera: Camera? = null
     var cameraProvider: ProcessCameraProvider? = null
-    var listener: ImageVideoResultCallback? = null
     lateinit var windowManager: WindowInfoTracker
     val viewModel by lazy {
         ViewModelProvider(requireActivity()).get(CameraViewModel::class.java)
     }
     var preview: Preview? = null
-    var flashMode = ImageCapture.FLASH_MODE_AUTO
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -65,9 +64,6 @@ abstract class BaseFragment<VB : ViewBinding> : Fragment(), CameraActionCallback
 
     protected abstract fun getViewBinding(inflater: LayoutInflater, container: ViewGroup?): VB
 
-    fun imageVideoCallbackListener(listener: ImageVideoResultCallback) {
-        this.listener = listener
-    }
 
     override fun onDestroyView() {
         _binding = null

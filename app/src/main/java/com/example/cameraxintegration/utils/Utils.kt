@@ -13,6 +13,7 @@ import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
+import com.example.cameraxintegration.callbacks.ImageVideoResultCallback
 import kotlin.math.abs
 import kotlin.math.max
 import kotlin.math.min
@@ -25,6 +26,11 @@ private const val RATIO_4_3_VALUE = 4.0 / 3.0
 private const val RATIO_16_9_VALUE = 16.0 / 9.0
 const val MAX_REC_DURATION = "max_rec_duration"
 private const val POST_DELAY_DURATION = 600L
+var listener: ImageVideoResultCallback? = null
+
+fun imageVideoCallbackListener(newListener: ImageVideoResultCallback) {
+    listener = newListener
+}
 
 fun aspectRatio(width: Int, height: Int): Int {
     val previewRatio = max(width, height).toDouble() / min(width, height)
@@ -53,6 +59,14 @@ val Int.counterText: String
 
 fun View.gone() {
     visibility = View.GONE
+}
+
+fun makeViewsGone(vararg view: View) = view.forEach {
+    it.visibility = View.GONE
+}
+
+fun showViews(vararg view: View) = view.forEach {
+    it.visibility = View.VISIBLE
 }
 
 fun View.show() {
@@ -114,5 +128,4 @@ fun isValidFile(context: Context, contentUri: Uri): Boolean {
     }
 
     return fileSize > 0
-
 }

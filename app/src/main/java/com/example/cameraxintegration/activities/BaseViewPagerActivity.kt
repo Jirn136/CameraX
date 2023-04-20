@@ -9,6 +9,7 @@ import android.util.Log
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.camera.core.CameraSelector
+import androidx.camera.core.ImageCapture
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.ViewModelProvider
@@ -29,12 +30,8 @@ class BaseViewPagerActivity : AppCompatActivity() {
 
     private var permissions = mutableListOf<String>()
 
-    private val imageFragment: ImageFragment by lazy {
-        ImageFragment.newInstance()
-    }
-    private val videoFragment: VideoFragment by lazy {
-        VideoFragment.newInstance(videoDuration)
-    }
+    private lateinit var imageFragment: ImageFragment
+    private lateinit var videoFragment: VideoFragment
 
     private val viewModel by lazy {
         ViewModelProvider(this).get(CameraViewModel::class.java)
@@ -59,20 +56,11 @@ class BaseViewPagerActivity : AppCompatActivity() {
         if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.P)
             permissions.add(Manifest.permission.WRITE_EXTERNAL_STORAGE)
 
-        if (allPermissionsGranted()) setupViewPager()
-        else ActivityCompat.requestPermissions(
-            this,
-            permissions.toTypedArray(),
-            REQUEST_CODE_PERMISSIONS
-        )
-
-        videoDuration = intent.getIntExtra(MAX_REC_DURATION, DEFAULT_DURATION)
-
-        handleObservers()
 
         with(binding) {
             cameraUi.apply {
                 imgFlash.apply {
+                    setImageResource(R.drawable.ic_flash_auto)
                     setOnClickListener {
                         (surfaceViewPager.currentItem == 0).ifElse(
                             { (imageFragment as CameraActionCallback).onFlashChangeCallback() },
@@ -123,14 +111,18 @@ class BaseViewPagerActivity : AppCompatActivity() {
                             this.progress = progress
                             max = videoDuration
                             invalidate()
+                            show()
                         }
                     }
                 }
 
                 isVideoRecording.observe(this@BaseViewPagerActivity) { videoRecState ->
                     tabLayout.apply {
+                        this.isEnabled = false
                         if (videoRecState) show() else gone()
                     }
+                    if(videoRecState) imgCapture.isEnabled = false
+                    makeViewsGone(imgFlash,imgSwap)
                     imgFlash.isEnabled = videoRecState
                     imgSwap.isEnabled = videoRecState
                 }
@@ -246,6 +238,22 @@ class BaseViewPagerActivity : AppCompatActivity() {
 
     override fun onResume() {
         super.onResume()
+        videoDuration = intent.getIntExtra(MAX_REC_DURATION, DEFAULT_DURATION)
+
+        if(!::imageFragment.isInitialized) imageFragment =  ImageFragment.newInstance()
+        if(!::videoFragment.isInitialized) videoFragment =  VideoFragment.newInstance(videoDuration)
+
+        binding.transitionPreview.gone()
+
+        if (allPermissionsGranted()) setupViewPager()
+        else ActivityCompat.requestPermissions(
+            this,
+            permissions.toTypedArray(),
+            REQUEST_CODE_PERMISSIONS
+        )
+
+        handleObservers()
+
         binding.container.postDelayed({
             hideSystemUI(this, binding.container)
         }, IMMERSIVE_FLAG_TIMEOUT)
@@ -261,7 +269,7 @@ class BaseViewPagerActivity : AppCompatActivity() {
             if (allPermissionsGranted()) {
                 setupViewPager()
             } else {
-                Toast.makeText(this, "Permissions not granted by the user.", Toast.LENGTH_SHORT)
+                Toast.makeText(this, getString(R.string.permission_not_granted), Toast.LENGTH_SHORT)
                     .show()
                 this.finish()
             }
@@ -275,8 +283,9 @@ class BaseViewPagerActivity : AppCompatActivity() {
             Manifest.permission.RECORD_AUDIO
         )
         private const val IMMERSIVE_FLAG_TIMEOUT = 500L
-        private const val DEFAULT_DURATION = 30
+        private const val DEFAULT_DURATION = 5
 
         var lensFacing = CameraSelector.LENS_FACING_BACK
+        var flashMode = ImageCapture.FLASH_MODE_AUTO
     }
 }

@@ -2,6 +2,8 @@ package com.example.cameraxintegration.fragment
 
 import android.annotation.SuppressLint
 import android.content.ContentValues
+import android.hardware.camera2.CameraCharacteristics
+import android.hardware.camera2.CameraMetadata
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
@@ -10,23 +12,41 @@ import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import androidx.camera.camera2.interop.Camera2CameraInfo
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.ImageCapture
 import androidx.camera.core.Preview
 import androidx.camera.lifecycle.ProcessCameraProvider
-import androidx.camera.video.*
+import androidx.camera.video.FallbackStrategy
+import androidx.camera.video.MediaStoreOutputOptions
+import androidx.camera.video.Quality
+import androidx.camera.video.QualitySelector
+import androidx.camera.video.Recorder
+import androidx.camera.video.Recording
+import androidx.camera.video.VideoCapture
+import androidx.camera.video.VideoRecordEvent
 import androidx.concurrent.futures.await
 import androidx.core.content.ContextCompat
 import androidx.core.util.Consumer
 import androidx.lifecycle.lifecycleScope
 import androidx.window.layout.WindowMetricsCalculator
+import com.example.cameraxintegration.activities.BaseViewPagerActivity.Companion.flashMode
 import com.example.cameraxintegration.activities.BaseViewPagerActivity.Companion.lensFacing
 import com.example.cameraxintegration.databinding.FragmentVideoBinding
-import com.example.cameraxintegration.utils.*
+import com.example.cameraxintegration.utils.FILENAME_FORMAT
+import com.example.cameraxintegration.utils.TAG
+import com.example.cameraxintegration.utils.aspectRatio
+import com.example.cameraxintegration.utils.defaultPostDelay
+import com.example.cameraxintegration.utils.gone
+import com.example.cameraxintegration.utils.ifElse
+import com.example.cameraxintegration.utils.listener
+import com.example.cameraxintegration.utils.runOnUiThread
+import com.example.cameraxintegration.utils.show
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
-import java.util.*
+import java.util.Locale
 import java.util.concurrent.TimeUnit
+
 
 class VideoFragment : BaseFragment<FragmentVideoBinding>() {
 
@@ -50,13 +70,14 @@ class VideoFragment : BaseFragment<FragmentVideoBinding>() {
         binding.apply {
             // Added Delay for binding the videoCapture useCase
             Handler(Looper.getMainLooper()).postDelayed({
-                lifecycleScope.launch {
+                viewLifecycleOwner.lifecycleScope.launch {
                     bindCameraUseCase()
                 }
             }, 200)
         }
     }
 
+    @SuppressLint("UnsafeOptInUsageError")
     private suspend fun bindCameraUseCase() {
         binding.apply {
             val cameraProvider = ProcessCameraProvider.getInstance(requireContext()).await()
@@ -69,20 +90,41 @@ class VideoFragment : BaseFragment<FragmentVideoBinding>() {
 
             val rotation = cameraPreviewView.display?.rotation
 
+            // Resets CameraController from the previous PreviewView
+            binding.cameraPreviewView.controller = null
+
             val cameraSelector = CameraSelector.Builder().requireLensFacing(lensFacing).build()
 
-            val qualitySelector = QualitySelector.fromOrderedList(
-                listOf(Quality.UHD, Quality.FHD, Quality.HD, Quality.SD),
-                FallbackStrategy.lowerQualityOrHigherThan(Quality.SD)
-            )
+            val cameraMetaData = if(lensFacing == CameraSelector.LENS_FACING_BACK)
+                CameraMetadata.LENS_FACING_BACK else CameraMetadata.LENS_FACING_FRONT
+            Log.i(TAG, "lensFacing $lensFacing metadata:$cameraMetaData")
+
+            val cameraInfo = cameraProvider?.availableCameraInfos?.filter {
+                Camera2CameraInfo.from(it).getCameraCharacteristic(
+                    CameraCharacteristics.LENS_FACING) == cameraMetaData
+            }
+
+            val supportedQualities = QualitySelector.getSupportedQualities(cameraInfo!![0])
+
+            val filteredQualities  = arrayListOf(Quality.UHD, Quality.FHD,Quality.HD,Quality.SD)
+                .filter { supportedQualities.contains(it) }
+
+            val qualitySelector = filteredQualities.let {
+                QualitySelector.fromOrderedList(it,
+                    FallbackStrategy.higherQualityOrLowerThan(Quality.HD)
+                )
+            }
+            Log.i(TAG, "qualitySelector $qualitySelector")
 
             // build a recorder, which can:
             //   - record video/audio to MediaStore(only shown here), File, ParcelFileDescriptor
             //   - be used create recording(s) (the recording performs recording)
-            val recorder = Recorder.Builder()
+            val recorder = Recorder.Builder().setExecutor(cameraExecutor)
                 .setQualitySelector(qualitySelector)
                 .build()
             videoCapture = VideoCapture.withOutput(recorder)
+
+            Log.i(TAG, "selected quality ${recorder.qualitySelector}")
 
             // Preview
             preview = rotation?.let {
@@ -111,8 +153,8 @@ class VideoFragment : BaseFragment<FragmentVideoBinding>() {
 
 
     override fun onPause() {
-        binding.cameraPreviewView.bitmap?.apply {
-            viewModel.onPreviewBitmap(this)
+        binding.cameraPreviewView.bitmap?.let {
+            viewModel.onPreviewBitmap(it)
         }
         stopRecording()
         cameraProvider?.unbind(videoCapture)
@@ -121,12 +163,15 @@ class VideoFragment : BaseFragment<FragmentVideoBinding>() {
     }
 
     override fun onResume() {
-        super.onResume()
-        binding.cameraPreviewView.invalidate()
-        viewModel.onProgressValueUpdate(recordingDuration)
-        viewLifecycleOwner.lifecycleScope.launch {
-            bindCameraUseCase()
+        if (stopped) {
+            binding.cameraPreviewView.invalidate()
+            viewModel.onProgressValueUpdate(recordingDuration)
+            viewLifecycleOwner.lifecycleScope.launch {
+                bindCameraUseCase()
+            }
+            stopped = false
         }
+        super.onResume()
     }
 
 
@@ -146,19 +191,14 @@ class VideoFragment : BaseFragment<FragmentVideoBinding>() {
             .build()
 
         // configure Recorder and Start recording to the mediaStoreOutput.
-        /* currentRecording?.let {
-             it.stop()
-             currentRecording = null
-         }*/
-        videoCapture.camera?.cameraControl?.enableTorch(
-            (flashMode == ImageCapture.FLASH_MODE_AUTO || flashMode == ImageCapture.FLASH_MODE_ON)
-        )
+        videoCapture.camera?.cameraControl?.enableTorch(flashMode ==
+                ImageCapture.FLASH_MODE_AUTO || flashMode == ImageCapture.FLASH_MODE_ON)
         currentRecording = videoCapture.output
             .prepareRecording(requireActivity(), mediaStoreOutput)
             .apply { withAudioEnabled() }
             .start(cameraExecutor, captureListener)
 
-        requireActivity().runOnUiThread {
+        runOnUiThread {
             viewModel.onVideoRecording(false)
         }
 
@@ -179,9 +219,10 @@ class VideoFragment : BaseFragment<FragmentVideoBinding>() {
             Log.i("TAG", "captureListener: ${event.outputResults.outputUri}")
             runOnUiThread {
                 viewModel.onProgressValueUpdate(recordingDuration)
+                listener?.onImageVideoResult(event.outputResults.outputUri)
+                requireActivity().finish()
             }
-            listener?.onImageVideoResult(event.outputResults.outputUri)
-//            requireActivity().finish()
+            binding.progressBar.gone()
         }
     }
 
@@ -202,6 +243,7 @@ class VideoFragment : BaseFragment<FragmentVideoBinding>() {
     private fun stopRecording() {
         val recording = currentRecording
         if (recording != null) {
+            binding.progressBar.show()
             videoCapture.camera?.cameraControl?.enableTorch(false)
             runOnUiThread {
                 viewModel.onVideoRecording(true)

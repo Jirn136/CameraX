@@ -15,6 +15,7 @@ import androidx.camera.core.Preview
 import androidx.lifecycle.lifecycleScope
 import androidx.window.layout.WindowMetricsCalculator
 import com.example.cameraxintegration.R
+import com.example.cameraxintegration.activities.BaseViewPagerActivity.Companion.flashMode
 import com.example.cameraxintegration.activities.BaseViewPagerActivity.Companion.lensFacing
 import com.example.cameraxintegration.databinding.FragmentCameraBinding
 import com.example.cameraxintegration.utils.*
@@ -65,6 +66,9 @@ class ImageFragment : BaseFragment<FragmentCameraBinding>() {
             val cameraProvider =
                 cameraProvider ?: throw IllegalStateException("Camera initialization failed.")
 
+            // Resets CameraController from the previous PreviewView
+            binding.cameraPreviewView.controller = null
+
             val cameraSelector = CameraSelector.Builder().requireLensFacing(lensFacing).build()
 
             // Preview
@@ -108,8 +112,8 @@ class ImageFragment : BaseFragment<FragmentCameraBinding>() {
     }
 
     override fun onPause() {
-        binding.cameraPreviewView.bitmap?.apply {
-            viewModel.onPreviewBitmap(this)
+        binding.cameraPreviewView.bitmap?.let {
+            viewModel.onPreviewBitmap(it)
         }
         cameraProvider?.unbind(imageCapture)
         stopped = true
@@ -119,7 +123,9 @@ class ImageFragment : BaseFragment<FragmentCameraBinding>() {
     override fun onResume() {
         if (stopped) {
             binding.cameraPreviewView.invalidate()
+            viewLifecycleOwner.lifecycleScope.launch{
             bindCameraUseCase()
+            }
             stopped = false
         }
         super.onResume()
@@ -184,7 +190,7 @@ class ImageFragment : BaseFragment<FragmentCameraBinding>() {
                         savedUri?.let {
                             listener?.onImageVideoResult(savedUri)
                         }
-//                        requireActivity().finish()
+                        requireActivity().finish()
                     }
                 })
         }
