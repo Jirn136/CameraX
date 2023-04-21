@@ -1,4 +1,4 @@
-package com.example.camerX.fragment
+package com.camera.cameraX.fragment
 
 import android.content.ContentValues
 import android.os.Build
@@ -14,14 +14,14 @@ import androidx.camera.core.ImageCaptureException
 import androidx.camera.core.Preview
 import androidx.lifecycle.lifecycleScope
 import androidx.window.layout.WindowMetricsCalculator
-import com.example.camerX.activities.BaseViewPagerActivity.Companion.flashMode
-import com.example.camerX.activities.BaseViewPagerActivity.Companion.lensFacing
-import com.example.camerX.utils.FILENAME
-import com.example.camerX.utils.PHOTO_TYPE
-import com.example.camerX.utils.TAG
-import com.example.camerX.utils.aspectRatio
-import com.example.camerX.utils.defaultPostDelay
-import com.example.camerX.utils.listener
+import com.camera.cameraX.activities.BaseViewPagerActivity.Companion.flashMode
+import com.camera.cameraX.activities.BaseViewPagerActivity.Companion.lensFacing
+import com.camera.cameraX.utils.FILENAME
+import com.camera.cameraX.utils.PHOTO_TYPE
+import com.camera.cameraX.utils.TAG
+import com.camera.cameraX.utils.aspectRatio
+import com.camera.cameraX.utils.defaultPostDelay
+import com.camera.cameraX.utils.listener
 import com.example.cameraxintegration.R
 import com.example.cameraxintegration.databinding.FragmentCameraBinding
 import kotlinx.coroutines.launch

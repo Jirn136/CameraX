@@ -1,4 +1,4 @@
-package com.example.camerX.utils
+package com.camera.cameraX.utils
 
 import android.app.Activity
 import android.content.Context
@@ -13,7 +13,7 @@ import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
-import com.example.camerX.callbacks.ImageVideoResultCallback
+import com.camera.cameraX.callbacks.ImageVideoResultCallback
 import kotlin.math.abs
 import kotlin.math.max
 import kotlin.math.min
@@ -109,23 +109,4 @@ fun defaultPostDelay(action: () -> Unit) {
     Handler(Looper.getMainLooper()).postDelayed({
         action()
     }, POST_DELAY_DURATION)
-}
-
-/**
- * A helper function to retrieve the captured file size.
- */
-fun isValidFile(context: Context, contentUri: Uri): Boolean {
-    val cursor = context
-        .contentResolver
-        .query(contentUri, null, null, null, null)
-        ?: return false
-
-    val sizeIndex = cursor.getColumnIndex(OpenableColumns.SIZE)
-    cursor.moveToFirst()
-
-    val fileSize = cursor.use {
-        it.getLong(sizeIndex)
-    }
-
-    return fileSize > 0
 }
