@@ -1,10 +1,15 @@
 package com.camera.cameraX.activities
 
 import android.Manifest
+import android.content.BroadcastReceiver
+import android.content.Context
+import android.content.Intent
+import android.content.IntentFilter
 import android.content.pm.PackageManager
 import android.content.res.Configuration
 import android.os.Build
 import android.os.Bundle
+import android.telephony.TelephonyManager
 import android.util.Log
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
@@ -13,6 +18,7 @@ import androidx.camera.core.ImageCapture
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.ViewModelProvider
+import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import androidx.viewpager2.widget.ViewPager2.ORIENTATION_HORIZONTAL
 import androidx.viewpager2.widget.ViewPager2.OnPageChangeCallback
 import androidx.viewpager2.widget.ViewPager2.SCROLL_STATE_IDLE
@@ -22,6 +28,9 @@ import com.camera.cameraX.callbacks.CameraActionCallback
 import com.camera.cameraX.fragment.ImageFragment
 import com.camera.cameraX.fragment.VideoFragment
 import com.camera.cameraX.utils.MAX_REC_DURATION
+import com.camera.cameraX.utils.Permissions
+import com.camera.cameraX.utils.TAG
+import com.camera.cameraX.utils.TelephonyServiceReceiver
 import com.camera.cameraX.utils.counterText
 import com.camera.cameraX.utils.defaultPostDelay
 import com.camera.cameraX.utils.gone
@@ -97,6 +106,33 @@ class BaseViewPagerActivity : AppCompatActivity() {
                 }
             }
         }
+
+        if(Permissions.isPermissionAllowed(this,Manifest.permission.READ_PHONE_STATE))
+            registerTelephonyCallListener()
+
+    }
+
+    private fun registerTelephonyCallListener() {
+        telephoneCallReceiver = object : BroadcastReceiver() {
+            override fun onReceive(context: Context, intent: Intent) {
+                val callState = intent.getStringExtra(TelephonyServiceReceiver.CALL_STATE)
+                Log.d(TAG, "handleCallState() callState -> $callState")
+                when (callState) {
+                    TelephonyManager.EXTRA_STATE_RINGING -> Log.d(TAG, "CALL_STATE_RINGING -> $callState")
+                    TelephonyManager.EXTRA_STATE_IDLE ->
+                        Log.d(TAG, "CALL_STATE_IDLE -> $callState")
+
+                    TelephonyManager.EXTRA_STATE_OFFHOOK -> {
+                        Log.d(TAG, "CALL_STATE_OFFHOOK -> $callState")
+                        viewModel.stopRecording(true)
+                    }
+                }
+            }
+        }
+        LocalBroadcastManager.getInstance(this).registerReceiver(
+            telephoneCallReceiver!!, IntentFilter(
+                TelephonyServiceReceiver.ACTION_PHONE_CALL_STATE_CHANGED)
+        )
     }
 
     private fun handleObservers() = binding.apply {
@@ -248,6 +284,13 @@ class BaseViewPagerActivity : AppCompatActivity() {
         return true
     }
 
+    override fun onDestroy() {
+        super.onDestroy()
+        telephoneCallReceiver?.let {
+            LocalBroadcastManager.getInstance(this).unregisterReceiver(it)
+        }
+    }
+
     override fun onResume() {
         super.onResume()
         videoDuration = intent.getIntExtra(MAX_REC_DURATION, DEFAULT_DURATION)
@@ -292,10 +335,13 @@ class BaseViewPagerActivity : AppCompatActivity() {
         private const val REQUEST_CODE_PERMISSIONS = 1001
         private val MANDATORY_PERMISSIONS = arrayOf(
             Manifest.permission.CAMERA,
-            Manifest.permission.RECORD_AUDIO
+            Manifest.permission.RECORD_AUDIO,
+            Manifest.permission.READ_PHONE_STATE
         )
         private const val IMMERSIVE_FLAG_TIMEOUT = 500L
         private const val DEFAULT_DURATION = 5
+
+        var telephoneCallReceiver: BroadcastReceiver? = null
 
         var lensFacing = CameraSelector.LENS_FACING_BACK
         var flashMode = ImageCapture.FLASH_MODE_AUTO
