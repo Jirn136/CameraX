@@ -1,9 +1,6 @@
 package com.camera.cameraX.fragment
 
-import android.content.ContentValues
-import android.os.Build
 import android.os.Bundle
-import android.provider.MediaStore
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
@@ -16,17 +13,13 @@ import androidx.lifecycle.lifecycleScope
 import androidx.window.layout.WindowMetricsCalculator
 import com.camera.cameraX.activities.BaseViewPagerActivity.Companion.flashMode
 import com.camera.cameraX.activities.BaseViewPagerActivity.Companion.lensFacing
-import com.camera.cameraX.utils.FILENAME
-import com.camera.cameraX.utils.PHOTO_TYPE
 import com.camera.cameraX.utils.TAG
 import com.camera.cameraX.utils.aspectRatio
 import com.camera.cameraX.utils.defaultPostDelay
 import com.camera.cameraX.utils.listener
-import com.example.cameraxintegration.R
 import com.example.cameraxintegration.databinding.FragmentCameraBinding
 import kotlinx.coroutines.launch
-import java.text.SimpleDateFormat
-import java.util.Locale
+import java.io.File
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 
@@ -137,7 +130,9 @@ class ImageFragment : BaseFragment<FragmentCameraBinding>() {
     }
 
     companion object {
-        fun newInstance(): ImageFragment {
+        private lateinit var path: String
+        fun newInstance(filePath: String): ImageFragment {
+            path = filePath
             return ImageFragment()
         }
     }
@@ -162,21 +157,10 @@ class ImageFragment : BaseFragment<FragmentCameraBinding>() {
 
     private fun takePicture() {
 // Create time stamped name and MediaStore entry.
-        val name = SimpleDateFormat(FILENAME, Locale.US).format(System.currentTimeMillis())
-        val contentValues = ContentValues().apply {
-            put(MediaStore.MediaColumns.DISPLAY_NAME, name)
-            put(MediaStore.MediaColumns.MIME_TYPE, PHOTO_TYPE)
-            if (Build.VERSION.SDK_INT > Build.VERSION_CODES.P) {
-                val appName = requireContext().resources.getString(R.string.app_name)
-                put(MediaStore.Images.Media.RELATIVE_PATH, "Pictures/${appName}")
-            }
-        }
 
         // Create output options object which contains file + metadata
         val outputOptions = ImageCapture.OutputFileOptions.Builder(
-            requireContext().contentResolver,
-            MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
-            contentValues
+            File(path + File.separator+"Image"+File.separator+"Sent" + System.currentTimeMillis() + ".jpeg")
         ).build()
 
         // Get a stable reference of the modifiable image capture use case

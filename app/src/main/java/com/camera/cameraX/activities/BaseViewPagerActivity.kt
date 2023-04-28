@@ -21,9 +21,11 @@ import com.camera.cameraX.adapter.ViewPagerAdapter
 import com.camera.cameraX.callbacks.CameraActionCallback
 import com.camera.cameraX.fragment.ImageFragment
 import com.camera.cameraX.fragment.VideoFragment
+import com.camera.cameraX.utils.FILEPATH
 import com.camera.cameraX.utils.MAX_REC_DURATION
 import com.camera.cameraX.utils.counterText
 import com.camera.cameraX.utils.defaultPostDelay
+import com.camera.cameraX.utils.emptyString
 import com.camera.cameraX.utils.gone
 import com.camera.cameraX.utils.hideStatusBar
 import com.camera.cameraX.utils.hideSystemUI
@@ -251,9 +253,10 @@ class BaseViewPagerActivity : AppCompatActivity() {
     override fun onResume() {
         super.onResume()
         videoDuration = intent.getIntExtra(MAX_REC_DURATION, DEFAULT_DURATION)
+        filePath = intent.getStringExtra(FILEPATH).toString()
 
-        if (!::imageFragment.isInitialized) imageFragment = ImageFragment.newInstance()
-        if (!::videoFragment.isInitialized) videoFragment = VideoFragment.newInstance(videoDuration)
+        if (!::imageFragment.isInitialized) imageFragment = ImageFragment.newInstance(filePath)
+        if (!::videoFragment.isInitialized) videoFragment = VideoFragment.newInstance(filePath,videoDuration)
 
         binding.transitionPreview.gone()
 
@@ -297,6 +300,7 @@ class BaseViewPagerActivity : AppCompatActivity() {
         private const val IMMERSIVE_FLAG_TIMEOUT = 500L
         private const val DEFAULT_DURATION = 5
 
+        var filePath: String = emptyString
         var lensFacing = CameraSelector.LENS_FACING_BACK
         var flashMode = ImageCapture.FLASH_MODE_AUTO
     }

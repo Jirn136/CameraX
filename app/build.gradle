@@ -55,8 +55,6 @@ dependencies {
 
     //WindowManager
     implementation 'androidx.window:window:1.0.0'
-//    implementation project(path: ':videoapp')
-//    implementation project(path: ':imageapp')
 
     def camerax_version = "1.1.0-beta03"
     // The following line is optional, as the core library is included indirectly by camera-camera2

@@ -4,6 +4,7 @@ import android.annotation.SuppressLint
 import android.content.ContentValues
 import android.hardware.camera2.CameraCharacteristics
 import android.hardware.camera2.CameraMetadata
+import android.net.Uri
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
@@ -32,10 +33,14 @@ import androidx.lifecycle.lifecycleScope
 import androidx.window.layout.WindowMetricsCalculator
 import com.camera.cameraX.activities.BaseViewPagerActivity.Companion.flashMode
 import com.camera.cameraX.activities.BaseViewPagerActivity.Companion.lensFacing
+import com.camera.cameraX.utils.FILENAME
 import com.camera.cameraX.utils.FILENAME_FORMAT
 import com.camera.cameraX.utils.TAG
 import com.camera.cameraX.utils.aspectRatio
+import com.camera.cameraX.utils.copy
 import com.camera.cameraX.utils.defaultPostDelay
+import com.camera.cameraX.utils.emptyString
+import com.camera.cameraX.utils.getRealPathFromUri
 import com.camera.cameraX.utils.gone
 import com.camera.cameraX.utils.ifElse
 import com.camera.cameraX.utils.listener
@@ -43,6 +48,7 @@ import com.camera.cameraX.utils.runOnUiThread
 import com.camera.cameraX.utils.show
 import com.example.cameraxintegration.databinding.FragmentVideoBinding
 import kotlinx.coroutines.launch
+import java.io.File
 import java.text.SimpleDateFormat
 import java.util.Locale
 import java.util.concurrent.TimeUnit
@@ -187,8 +193,7 @@ class VideoFragment : BaseFragment<FragmentVideoBinding>() {
             put(MediaStore.Video.Media.DISPLAY_NAME, name)
         }
         val mediaStoreOutput = MediaStoreOutputOptions.Builder(
-            requireActivity().contentResolver,
-            MediaStore.Video.Media.EXTERNAL_CONTENT_URI
+            requireActivity().contentResolver, MediaStore.Video.Media.EXTERNAL_CONTENT_URI
         ).setContentValues(contentValues)
             .build()
 
@@ -221,10 +226,36 @@ class VideoFragment : BaseFragment<FragmentVideoBinding>() {
         if (event is VideoRecordEvent.Finalize) {
             // display the captured video
             Log.i("TAG", "captureListener: ${event.outputResults.outputUri}")
+            val outputDirectory =
+                File(filePath + File.separator + "Video" + File.separator + "Sent")
+            if (!outputDirectory.exists()) outputDirectory.mkdirs()
+            val dstFile = File.createTempFile(
+                SimpleDateFormat(FILENAME, Locale.US).format(
+                    System.currentTimeMillis()
+                ), ".mp4", outputDirectory
+            )
             runOnUiThread {
+                context?.let {
+                    val currentFile = File(
+                        getRealPathFromUri(
+                            it, event.outputResults.outputUri
+                        ).toString()
+                    )
+                    context?.let {
+                        copy(
+                            currentFile, dstFile
+                        )
+                    }
+                    currentFile.let { file ->
+                        if (file.exists()) file.delete()
+                    }
+                }
                 viewModel.onProgressValueUpdate(recordingDuration)
-                listener?.onImageVideoResult(event.outputResults.outputUri)
-                if(this.isAdded) {
+                listener?.onImageVideoResult(
+                    if (context != null) Uri.fromFile(dstFile)
+                    else event.outputResults.outputUri
+                )
+                if (this.isAdded) {
                     requireActivity().finish()
                     binding.progressBar.gone()
                 }
@@ -262,7 +293,9 @@ class VideoFragment : BaseFragment<FragmentVideoBinding>() {
     companion object {
 
         private var recordingDuration: Int = 0
-        fun newInstance(duration: Int): VideoFragment {
+        private var filePath :String = emptyString
+        fun newInstance(path:String,duration: Int): VideoFragment {
+            filePath = path
             recordingDuration = duration
             return VideoFragment()
         }
