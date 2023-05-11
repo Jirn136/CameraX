@@ -13,6 +13,7 @@ import androidx.lifecycle.lifecycleScope
 import androidx.window.layout.WindowMetricsCalculator
 import com.camera.cameraX.activities.BaseViewPagerActivity.Companion.flashMode
 import com.camera.cameraX.activities.BaseViewPagerActivity.Companion.lensFacing
+import com.camera.cameraX.utils.FILENAME
 import com.camera.cameraX.utils.TAG
 import com.camera.cameraX.utils.aspectRatio
 import com.camera.cameraX.utils.defaultPostDelay
@@ -20,6 +21,8 @@ import com.camera.cameraX.utils.listener
 import com.example.cameraxintegration.databinding.FragmentCameraBinding
 import kotlinx.coroutines.launch
 import java.io.File
+import java.text.SimpleDateFormat
+import java.util.Locale
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 
@@ -156,11 +159,13 @@ class ImageFragment : BaseFragment<FragmentCameraBinding>() {
     override fun onCaptureCallback() = takePicture()
 
     private fun takePicture() {
-// Create time stamped name and MediaStore entry.
-
         // Create output options object which contains file + metadata
+        val outputDirectory = File(path + File.separator+"Image"+File.separator+"Sent" )
+        if(!outputDirectory.exists()) outputDirectory.mkdirs()
         val outputOptions = ImageCapture.OutputFileOptions.Builder(
-            File(path + File.separator+"Image"+File.separator+"Sent" + System.currentTimeMillis() + ".jpeg")
+            File.createTempFile(
+                SimpleDateFormat(FILENAME, Locale.US).format(
+                System.currentTimeMillis()),".jpeg",outputDirectory)
         ).build()
 
         // Get a stable reference of the modifiable image capture use case
