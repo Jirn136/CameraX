@@ -31,21 +31,12 @@ class CameraViewModel : ViewModel() {
     val previewBitmap:LiveData<Bitmap>
         get() = _previewBitmap
 
-    fun onFlashState(state: Int) =
-        _flashState.postValue(state)
+    fun onFlashState(state: Int) = _flashState.postValue(state)
 
+    fun onProgressValueUpdate(value: Int) = _progressValue.postValue(value)
+    fun onVideoRecording(videoStopped: Boolean) = _isVideoRecording.postValue(videoStopped)
 
-    fun onProgressValueUpdate(value: Int) =
-        _progressValue.postValue(value)
-
-
-    fun onVideoRecording(videoStopped: Boolean) =
-        _isVideoRecording.postValue(videoStopped)
-
-
-    fun onLensFacingBack(isLensFacing: Boolean) =
-        _isLensFacingBack.postValue(isLensFacing)
-
+    fun onLensFacingBack(isLensFacing: Boolean) = _isLensFacingBack.postValue(isLensFacing)
 
     fun onPreviewBitmap(bitmap: Bitmap) = _previewBitmap.postValue(bitmap)
 
