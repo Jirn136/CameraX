@@ -1,4 +1,4 @@
-package com.example.cameraxintegration
+package com.example.camerX
 
 import org.junit.Test
 

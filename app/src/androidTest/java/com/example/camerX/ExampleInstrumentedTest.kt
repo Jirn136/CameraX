@@ -1,4 +1,4 @@
-package com.example.cameraxintegration
+package com.example.camerX
 
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.ext.junit.runners.AndroidJUnit4

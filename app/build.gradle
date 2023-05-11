@@ -9,7 +9,7 @@ android {
 
     defaultConfig {
         applicationId "com.example.cameraxintegration"
-        minSdk 28
+        minSdk 27
         targetSdk 31
         versionCode 1
         versionName "1.0"
@@ -54,11 +54,9 @@ dependencies {
     androidTestImplementation 'androidx.test.espresso:espresso-core:3.5.1'
 
     //WindowManager
-    implementation 'androidx.window:window:1.0.0-alpha09'
-//    implementation project(path: ':videoapp')
-//    implementation project(path: ':imageapp')
+    implementation 'androidx.window:window:1.0.0'
 
-    def camerax_version = "1.1.0-beta01"
+    def camerax_version = "1.1.0-beta03"
     // The following line is optional, as the core library is included indirectly by camera-camera2
     implementation "androidx.camera:camera-core:${camerax_version}"
     implementation "androidx.camera:camera-camera2:${camerax_version}"
