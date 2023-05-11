@@ -10,6 +10,7 @@ class CameraViewModel : ViewModel() {
     private val _progressValue = MutableLiveData<Int>()
     private val _isVideoRecording = MutableLiveData<Boolean>()
     private val _isLensFacingBack = MutableLiveData<Boolean>()
+    private val _isGettingCall = MutableLiveData<Boolean>()
     private val _previewBitmap = MutableLiveData<Bitmap>()
 
     val flashState: LiveData<Int>
@@ -23,6 +24,9 @@ class CameraViewModel : ViewModel() {
 
     val isLensFacingBack:LiveData<Boolean>
         get() = _isLensFacingBack
+
+    val isGettingCall:LiveData<Boolean>
+        get() = _isGettingCall
 
     val previewBitmap:LiveData<Bitmap>
         get() = _previewBitmap
@@ -43,8 +47,8 @@ class CameraViewModel : ViewModel() {
         _isLensFacingBack.postValue(isLensFacing)
 
 
-    fun onPreviewBitmap(bitmap: Bitmap) {
-        _previewBitmap.value = bitmap
-    }
+    fun onPreviewBitmap(bitmap: Bitmap) = _previewBitmap.postValue(bitmap)
+
+    fun stopRecording(stopRecording:Boolean) = _isGettingCall.postValue(stopRecording)
 
 }

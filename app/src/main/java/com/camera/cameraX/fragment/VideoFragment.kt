@@ -29,11 +29,14 @@ import androidx.camera.video.VideoRecordEvent
 import androidx.concurrent.futures.await
 import androidx.core.content.ContextCompat
 import androidx.core.util.Consumer
+import androidx.lifecycle.Observer
 import androidx.lifecycle.lifecycleScope
+import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import androidx.window.layout.WindowMetricsCalculator
 import com.camera.cameraX.activities.BaseViewPagerActivity.Companion.flashMode
 import com.camera.cameraX.activities.BaseViewPagerActivity.Companion.lensFacing
 import com.camera.cameraX.utils.FILENAME
+import com.camera.cameraX.activities.BaseViewPagerActivity.Companion.telephoneCallReceiver
 import com.camera.cameraX.utils.FILENAME_FORMAT
 import com.camera.cameraX.utils.TAG
 import com.camera.cameraX.utils.aspectRatio
@@ -80,6 +83,10 @@ class VideoFragment : BaseFragment<FragmentVideoBinding>() {
                     bindCameraUseCase()
                 }
             }, 200)
+        }
+
+        viewModel.isGettingCall.observe(viewLifecycleOwner) {
+            if(it) stopRecording()
         }
     }
 
@@ -258,6 +265,11 @@ class VideoFragment : BaseFragment<FragmentVideoBinding>() {
                 if (this.isAdded) {
                     requireActivity().finish()
                     binding.progressBar.gone()
+                }
+                telephoneCallReceiver?.let {
+                    context?.let {context ->
+                        LocalBroadcastManager.getInstance(context).unregisterReceiver(it)
+                    }
                 }
             }
         }
