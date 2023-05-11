@@ -13,6 +13,7 @@ import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
+import com.camera.cameraX.callbacks.CameraXAccessListener
 import com.camera.cameraX.callbacks.ImageVideoResultCallback
 import kotlin.math.abs
 import kotlin.math.max
@@ -26,10 +27,15 @@ private const val RATIO_4_3_VALUE = 4.0 / 3.0
 private const val RATIO_16_9_VALUE = 16.0 / 9.0
 const val MAX_REC_DURATION = "max_rec_duration"
 private const val POST_DELAY_DURATION = 600L
+const val emptyString = ""
 var listener: ImageVideoResultCallback? = null
+var accessListener: CameraXAccessListener? = null
 
 fun imageVideoCallbackListener(newListener: ImageVideoResultCallback) {
     listener = newListener
+}
+fun canCameraAccessListener(newListener: CameraXAccessListener) {
+    accessListener = newListener
 }
 
 fun aspectRatio(width: Int, height: Int): Int {

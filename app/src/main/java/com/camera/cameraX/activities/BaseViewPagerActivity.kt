@@ -31,6 +31,7 @@ import com.camera.cameraX.utils.MAX_REC_DURATION
 import com.camera.cameraX.utils.Permissions
 import com.camera.cameraX.utils.TAG
 import com.camera.cameraX.utils.TelephonyServiceReceiver
+import com.camera.cameraX.utils.accessListener
 import com.camera.cameraX.utils.counterText
 import com.camera.cameraX.utils.defaultPostDelay
 import com.camera.cameraX.utils.gone
@@ -91,9 +92,20 @@ class BaseViewPagerActivity : AppCompatActivity() {
 
                 imgCapture.apply {
                     setOnClickListener {
-                        (surfaceViewPager.currentItem == 0).ifElse(
-                            { (imageFragment as CameraActionCallback).onCaptureCallback() },
-                            { (videoFragment as CameraActionCallback).onCaptureCallback() })
+                        if(accessListener?.canAccessCamera()?.first == false){
+                            Toast.makeText(
+                                this@BaseViewPagerActivity,
+                                accessListener?.canAccessCamera()?.second?: getString(R.string.user_on_call),
+                                Toast.LENGTH_SHORT
+                            ).show()
+                            viewModel.stopRecording(true)
+                            finish()
+                        } else {
+                            (surfaceViewPager.currentItem == 0).ifElse(
+                                { (imageFragment as CameraActionCallback).onCaptureCallback() },
+                                { (videoFragment as CameraActionCallback).onCaptureCallback() })
+                        }
+
                     }
                 }
 
@@ -123,7 +135,12 @@ class BaseViewPagerActivity : AppCompatActivity() {
                         Log.d(TAG, "CALL_STATE_IDLE -> $callState")
 
                     TelephonyManager.EXTRA_STATE_OFFHOOK -> {
-                        Log.d(TAG, "CALL_STATE_OFFHOOK -> $callState")
+                        Log.d(TAG, "CALL_STATE_OFF_HOOK -> $callState")
+                        Toast.makeText(
+                            this@BaseViewPagerActivity,
+                            getString(R.string.user_on_call),
+                            Toast.LENGTH_SHORT
+                        ).show()
                         viewModel.stopRecording(true)
                     }
                 }
@@ -284,13 +301,6 @@ class BaseViewPagerActivity : AppCompatActivity() {
         return true
     }
 
-    override fun onDestroy() {
-        super.onDestroy()
-        telephoneCallReceiver?.let {
-            LocalBroadcastManager.getInstance(this).unregisterReceiver(it)
-        }
-    }
-
     override fun onResume() {
         super.onResume()
         videoDuration = intent.getIntExtra(MAX_REC_DURATION, DEFAULT_DURATION)
@@ -328,6 +338,14 @@ class BaseViewPagerActivity : AppCompatActivity() {
                     .show()
                 this.finish()
             }
+        }
+    }
+
+
+    override fun onDestroy() {
+        super.onDestroy()
+        telephoneCallReceiver?.let {
+            LocalBroadcastManager.getInstance(this).unregisterReceiver(it)
         }
     }
 
