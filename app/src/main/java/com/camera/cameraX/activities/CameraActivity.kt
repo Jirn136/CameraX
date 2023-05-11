@@ -32,7 +32,6 @@ import com.camera.cameraX.utils.MAX_REC_DURATION
 import com.camera.cameraX.utils.Permissions
 import com.camera.cameraX.utils.TAG
 import com.camera.cameraX.utils.TelephonyServiceReceiver
-import com.camera.cameraX.utils.accessListener
 import com.camera.cameraX.utils.counterText
 import com.camera.cameraX.utils.defaultPostDelay
 import com.camera.cameraX.utils.emptyString
@@ -48,7 +47,7 @@ import com.example.cameraxintegration.R
 import com.example.cameraxintegration.databinding.ActivityBaseViewPagerBinding
 import com.google.android.material.tabs.TabLayoutMediator
 
-class BaseViewPagerActivity : AppCompatActivity() {
+class CameraActivity : AppCompatActivity() {
     private lateinit var _binding: ActivityBaseViewPagerBinding
     private val binding get() = _binding
 
@@ -94,20 +93,9 @@ class BaseViewPagerActivity : AppCompatActivity() {
 
                 imgCapture.apply {
                     setOnClickListener {
-                        if(accessListener?.canAccessCamera()?.first == false){
-                            Toast.makeText(
-                                this@BaseViewPagerActivity,
-                                accessListener?.canAccessCamera()?.second?: getString(R.string.user_on_call),
-                                Toast.LENGTH_SHORT
-                            ).show()
-                            viewModel.stopRecording(true)
-                            finish()
-                        } else {
-                            (surfaceViewPager.currentItem == 0).ifElse(
-                                { (imageFragment as CameraActionCallback).onCaptureCallback() },
-                                { (videoFragment as CameraActionCallback).onCaptureCallback() })
-                        }
-
+                        (surfaceViewPager.currentItem == 0).ifElse(
+                            { (imageFragment as CameraActionCallback).onCaptureCallback() },
+                            { (videoFragment as CameraActionCallback).onCaptureCallback() })
                     }
                 }
 
@@ -121,7 +109,7 @@ class BaseViewPagerActivity : AppCompatActivity() {
             }
         }
 
-        if(Permissions.isPermissionAllowed(this,Manifest.permission.READ_PHONE_STATE))
+        if (Permissions.isPermissionAllowed(this, Manifest.permission.READ_PHONE_STATE))
             registerTelephonyCallListener()
 
     }
@@ -132,14 +120,18 @@ class BaseViewPagerActivity : AppCompatActivity() {
                 val callState = intent.getStringExtra(TelephonyServiceReceiver.CALL_STATE)
                 Log.d(TAG, "handleCallState() callState -> $callState")
                 when (callState) {
-                    TelephonyManager.EXTRA_STATE_RINGING -> Log.d(TAG, "CALL_STATE_RINGING -> $callState")
+                    TelephonyManager.EXTRA_STATE_RINGING -> Log.d(
+                        TAG,
+                        "CALL_STATE_RINGING -> $callState"
+                    )
+
                     TelephonyManager.EXTRA_STATE_IDLE ->
                         Log.d(TAG, "CALL_STATE_IDLE -> $callState")
 
                     TelephonyManager.EXTRA_STATE_OFFHOOK -> {
                         Log.d(TAG, "CALL_STATE_OFF_HOOK -> $callState")
                         Toast.makeText(
-                            this@BaseViewPagerActivity,
+                            this@CameraActivity,
                             getString(R.string.user_on_call),
                             Toast.LENGTH_SHORT
                         ).show()
@@ -150,7 +142,8 @@ class BaseViewPagerActivity : AppCompatActivity() {
         }
         LocalBroadcastManager.getInstance(this).registerReceiver(
             telephoneCallReceiver!!, IntentFilter(
-                TelephonyServiceReceiver.ACTION_PHONE_CALL_STATE_CHANGED)
+                TelephonyServiceReceiver.ACTION_PHONE_CALL_STATE_CHANGED
+            )
         )
     }
 
@@ -158,7 +151,7 @@ class BaseViewPagerActivity : AppCompatActivity() {
         cameraUi.apply {
 
             viewModel.apply {
-                flashState.observe(this@BaseViewPagerActivity) {
+                flashState.observe(this@CameraActivity) {
                     val flashMode = when (it) {
                         1 -> R.drawable.ic_flash
                         2 -> R.drawable.ic_flash_off
@@ -168,7 +161,7 @@ class BaseViewPagerActivity : AppCompatActivity() {
                 }
 
                 // Progress value has been updated to max when user stops/fullFilled the video recording time
-                progressValue.observe(this@BaseViewPagerActivity) { progress ->
+                progressValue.observe(this@CameraActivity) { progress ->
                     progressLayout.apply {
                         videoCounterLayout.apply {
                             if (progress >= videoDuration) gone() else show()
@@ -183,7 +176,7 @@ class BaseViewPagerActivity : AppCompatActivity() {
                     }
                 }
 
-                isVideoRecording.observe(this@BaseViewPagerActivity) { videoRecState ->
+                isVideoRecording.observe(this@CameraActivity) { videoRecState ->
                     tabLayout.apply {
                         this.isEnabled = false
                         if (videoRecState) show() else gone()
@@ -194,7 +187,7 @@ class BaseViewPagerActivity : AppCompatActivity() {
                     imgSwap.isEnabled = videoRecState
                 }
 
-                isLensFacingBack.observe(this@BaseViewPagerActivity) { lensFacingBack ->
+                isLensFacingBack.observe(this@CameraActivity) { lensFacingBack ->
                     transitionPreview.show()
                     if (lensFacingBack) {
                         imgCameraType.apply {
@@ -215,7 +208,7 @@ class BaseViewPagerActivity : AppCompatActivity() {
                     defaultPostDelay { transitionPreview.gone() }
                 }
 
-                previewBitmap.observe(this@BaseViewPagerActivity) { bitmap ->
+                previewBitmap.observe(this@CameraActivity) { bitmap ->
                     transitionPreview.setImageBitmap(bitmap)
                 }
             }
@@ -309,7 +302,8 @@ class BaseViewPagerActivity : AppCompatActivity() {
         filePath = intent.getStringExtra(FILEPATH).toString()
 
         if (!::imageFragment.isInitialized) imageFragment = ImageFragment.newInstance(filePath)
-        if (!::videoFragment.isInitialized) videoFragment = VideoFragment.newInstance(filePath,videoDuration)
+        if (!::videoFragment.isInitialized) videoFragment =
+            VideoFragment.newInstance(filePath, videoDuration)
 
         binding.transitionPreview.gone()
 

@@ -11,8 +11,8 @@ import androidx.camera.core.ImageCaptureException
 import androidx.camera.core.Preview
 import androidx.lifecycle.lifecycleScope
 import androidx.window.layout.WindowMetricsCalculator
-import com.camera.cameraX.activities.BaseViewPagerActivity.Companion.flashMode
-import com.camera.cameraX.activities.BaseViewPagerActivity.Companion.lensFacing
+import com.camera.cameraX.activities.CameraActivity.Companion.flashMode
+import com.camera.cameraX.activities.CameraActivity.Companion.lensFacing
 import com.camera.cameraX.utils.FILENAME
 import com.camera.cameraX.utils.TAG
 import com.camera.cameraX.utils.aspectRatio

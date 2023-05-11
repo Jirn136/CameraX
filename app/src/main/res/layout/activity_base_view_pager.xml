@@ -6,7 +6,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:keepScreenOn="true"
-    tools:context="com.camera.cameraX.activities.BaseViewPagerActivity">
+    tools:context="com.camera.cameraX.activities.CameraActivity">
 
     <androidx.viewpager2.widget.ViewPager2
         android:id="@+id/surface_view_pager"
