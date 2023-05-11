@@ -14,8 +14,8 @@ import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProvider
 import androidx.viewbinding.ViewBinding
 import androidx.window.layout.WindowInfoTracker
-import com.camera.cameraX.activities.BaseViewPagerActivity.Companion.flashMode
-import com.camera.cameraX.activities.BaseViewPagerActivity.Companion.lensFacing
+import com.camera.cameraX.activities.CameraActivity.Companion.flashMode
+import com.camera.cameraX.activities.CameraActivity.Companion.lensFacing
 import com.camera.cameraX.callbacks.CameraActionCallback
 import com.camera.cameraX.utils.hasBackCamera
 import com.camera.cameraX.utils.hasFrontCamera

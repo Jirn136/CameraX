@@ -1,24 +1,11 @@
-/*
- * @category ContusFly
- * @copyright Copyright (C) 2016 Contus. All rights reserved.
- * @license http://www.apache.org/licenses/LICENSE-2.0
- */
 package com.camera.cameraX.utils
 
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.telephony.TelephonyManager
-import android.util.Log
 import androidx.localbroadcastmanager.content.LocalBroadcastManager
 
-
-/**
- * Telephony broadcast receiver
- *
- * @author ContusTeam <developers></developers>@contus.in>
- * @version 2.0
- */
 class TelephonyServiceReceiver : BroadcastReceiver() {
     /**
      * This method will be called when a telephonic call received
@@ -44,7 +31,6 @@ class TelephonyServiceReceiver : BroadcastReceiver() {
      * @param callState it indicates [TelephonyManager] call states.
      */
     private fun sendBroadcast(context: Context, callState: String?) {
-        Log.d("telephonyCallTest", "BroadCastingCallState: $callState")
         val intent = Intent(ACTION_PHONE_CALL_STATE_CHANGED)
         intent.putExtra(CALL_STATE, callState)
         LocalBroadcastManager.getInstance(context).sendBroadcast(intent)
