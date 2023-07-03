@@ -8,8 +8,11 @@ Please use the following steps :
    a) **Duration** -> Duration for video that need to be recorded.
    b) **Filepath** -> Custom FilePath for loading the files on the respective file directory.
 
-2) Add interface to the activity class that needed the result. From the result interface,
+2) Add interface callback(imageVideoCallbackListener) to the activity class that needed the result. From the result interface,
    we'll receive the path where the file stored.
+
+3) We can have a callback (canCameraAccessListener) for user on call status to handle camera during the call (optional).
+   a) Initialize the callback listener on the application/base class and obtain the Janus call status for handling the camera
 
 //Duration that need to be recorded, at default it'll record 5 seconds
 // FilePath that media has to be stored. User do not need to mention the filename and extension

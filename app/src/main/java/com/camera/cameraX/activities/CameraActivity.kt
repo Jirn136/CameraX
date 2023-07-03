@@ -32,6 +32,7 @@ import com.camera.cameraX.utils.MAX_REC_DURATION
 import com.camera.cameraX.utils.Permissions
 import com.camera.cameraX.utils.TAG
 import com.camera.cameraX.utils.TelephonyServiceReceiver
+import com.camera.cameraX.utils.accessListener
 import com.camera.cameraX.utils.counterText
 import com.camera.cameraX.utils.defaultPostDelay
 import com.camera.cameraX.utils.emptyString
@@ -93,9 +94,19 @@ class CameraActivity : AppCompatActivity() {
 
                 imgCapture.apply {
                     setOnClickListener {
-                        (surfaceViewPager.currentItem == 0).ifElse(
-                            { (imageFragment as CameraActionCallback).onCaptureCallback() },
-                            { (videoFragment as CameraActionCallback).onCaptureCallback() })
+                        if(accessListener?.canAccessCamera()?.first == false){
+                            Toast.makeText(
+                                this@CameraActivity,
+                                accessListener?.canAccessCamera()?.second?: getString(R.string.user_on_call),
+                                Toast.LENGTH_SHORT
+                            ).show()
+                            viewModel.stopRecording(true)
+                            finish()
+                        } else {
+                            (surfaceViewPager.currentItem == 0).ifElse(
+                                { (imageFragment as CameraActionCallback).onCaptureCallback() },
+                                { (videoFragment as CameraActionCallback).onCaptureCallback() })
+                        }
                     }
                 }
 
