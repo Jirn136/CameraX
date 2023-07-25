@@ -10,4 +10,5 @@
     <string name="preview">preview</string>
     <string name="permission_not_granted">Permissions not granted by the user.</string>
     <string name="user_on_call">Camera cannot be accessed while in call</string>
+    <string name="recording_length_should_be_greater_than_0_seconds">Recording length should be greater than 0 seconds</string>
 </resources>

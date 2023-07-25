@@ -13,6 +13,7 @@ import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.Toast
 import androidx.camera.camera2.interop.Camera2CameraInfo
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.ImageCapture
@@ -34,8 +35,8 @@ import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import androidx.window.layout.WindowMetricsCalculator
 import com.camera.cameraX.activities.CameraActivity.Companion.flashMode
 import com.camera.cameraX.activities.CameraActivity.Companion.lensFacing
-import com.camera.cameraX.utils.FILENAME
 import com.camera.cameraX.activities.CameraActivity.Companion.telephoneCallReceiver
+import com.camera.cameraX.utils.FILENAME
 import com.camera.cameraX.utils.FILENAME_FORMAT
 import com.camera.cameraX.utils.TAG
 import com.camera.cameraX.utils.aspectRatio
@@ -48,6 +49,7 @@ import com.camera.cameraX.utils.ifElse
 import com.camera.cameraX.utils.listener
 import com.camera.cameraX.utils.runOnUiThread
 import com.camera.cameraX.utils.show
+import com.example.cameraxintegration.R
 import com.example.cameraxintegration.databinding.FragmentVideoBinding
 import kotlinx.coroutines.launch
 import java.io.File
@@ -61,6 +63,7 @@ class VideoFragment : BaseFragment<FragmentVideoBinding>() {
     private lateinit var videoCapture: VideoCapture<Recorder>
     private var currentRecording: Recording? = null
     private var stopped = false
+    private var recordingTime = 0
 
     /** Blocking camera operations are performed using this executor */
     private val cameraExecutor by lazy {
@@ -85,7 +88,7 @@ class VideoFragment : BaseFragment<FragmentVideoBinding>() {
         }
 
         viewModel.isGettingCall.observe(viewLifecycleOwner) {
-            if(it) stopRecording()
+            if (it) stopRecording()
         }
     }
 
@@ -225,7 +228,7 @@ class VideoFragment : BaseFragment<FragmentVideoBinding>() {
      */
     private val captureListener = Consumer<VideoRecordEvent> { event ->
 
-        Log.i("TAG", "event: $event recDuration: $recordingDuration")
+        Log.i("TAG", "event: $event recDuration: $recordingTime")
 
         updateUI(event)
 
@@ -247,26 +250,27 @@ class VideoFragment : BaseFragment<FragmentVideoBinding>() {
                             it, event.outputResults.outputUri
                         ).toString()
                     )
-                    context?.let {
-                        copy(
-                            currentFile, dstFile
-                        )
-                    }
+
+                    copy(currentFile, dstFile)
+
                     currentFile.let { file ->
                         if (file.exists()) file.delete()
                     }
                 }
                 viewModel.onProgressValueUpdate(recordingDuration)
                 listener?.onImageVideoResult(
-                    if (context != null) Uri.fromFile(dstFile)
-                    else event.outputResults.outputUri
+                    context?.let {
+                        Uri.fromFile(dstFile)
+                    } ?: run {
+                        event.outputResults.outputUri
+                    }
                 )
                 if (this.isAdded) {
                     requireActivity().finish()
                     binding.progressBar.gone()
                 }
                 telephoneCallReceiver?.let {
-                    context?.let {context ->
+                    context?.let { context ->
                         LocalBroadcastManager.getInstance(context).unregisterReceiver(it)
                     }
                 }
@@ -276,36 +280,42 @@ class VideoFragment : BaseFragment<FragmentVideoBinding>() {
 
 
     private fun updateUI(event: VideoRecordEvent?) {
-        var time = 0
         event?.recordingStats?.apply {
-            time = TimeUnit.NANOSECONDS.toSeconds(recordedDurationNanos).toInt()
-            Log.i(TAG, "updateUI: $time")
+            recordingTime = TimeUnit.NANOSECONDS.toSeconds(recordedDurationNanos).toInt()
+            Log.i(TAG, "updateUI: $recordingTime")
         }
         runOnUiThread {
-            viewModel.onProgressValueUpdate(time)
+            viewModel.onProgressValueUpdate(recordingTime)
         }
-        if (time >= recordingDuration) stopRecording()
+        if (recordingTime >= recordingDuration) stopRecording()
     }
 
     @SuppressLint("RestrictedApi")
     private fun stopRecording() {
-        val recording = currentRecording
-        if (recording != null) {
-            binding.progressBar.show()
-            videoCapture.camera?.cameraControl?.enableTorch(false)
-            runOnUiThread {
-                viewModel.onVideoRecording(true)
+        if (recordingTime != 0) {
+            val recording = currentRecording
+            recording?.let {
+                binding.progressBar.show()
+                videoCapture.camera?.cameraControl?.enableTorch(false)
+                runOnUiThread {
+                    viewModel.onVideoRecording(true)
+                }
+                recording.stop()
+                currentRecording = null
             }
-            recording.stop()
-            currentRecording = null
-        }
+        } else
+            Toast.makeText(
+                requireContext(),
+                getString(R.string.recording_length_should_be_greater_than_0_seconds),
+                Toast.LENGTH_SHORT
+            ).show()
     }
 
     companion object {
 
         private var recordingDuration: Int = 0
-        private var filePath :String = emptyString
-        fun newInstance(path:String,duration: Int): VideoFragment {
+        private var filePath: String = emptyString
+        fun newInstance(path: String, duration: Int): VideoFragment {
             filePath = path
             recordingDuration = duration
             return VideoFragment()
